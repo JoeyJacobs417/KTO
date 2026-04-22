@@ -18,7 +18,7 @@ per contact hoe het cijfer zich ontwikkelt over de tijd.
     - Overzicht — overall stats + recente reacties + tijdlijn per contact
     - Contacten — lijst + toevoegen + CSV-import + activeren/deactiveren
     - Rondes — historie met response rate per ronde
-    - Instellingen — interval + auto-versturen aan/uit
+    - Instellingen — interval + auto-versturen aan/uit   
 
 ## Snel lokaal draaien
 
