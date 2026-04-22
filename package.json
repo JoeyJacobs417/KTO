@@ -1,0 +1,14 @@
+{
+  "name": "customer-survey",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Klanttevredenheidsonderzoek - Vercel-ready webapp",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node local-server.js"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.0",
+    "resend": "^4.0.1"
+  }
+}

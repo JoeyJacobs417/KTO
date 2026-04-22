@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="login-shell">
+    <form id="loginForm" class="card login-card">
+      <div class="brand" style="margin-bottom:24px;">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="name">Admin</div>
+      </div>
+
+      <h2>Inloggen</h2>
+      <p class="meta" style="margin-top:0;margin-bottom:20px;">Toegang tot het survey-dashboard.</p>
+
+      <div class="notice" id="notice"></div>
+
+      <div class="field">
+        <label for="username">Gebruikersnaam</label>
+        <input type="text" id="username" name="username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="password">Wachtwoord</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required />
+      </div>
+
+      <button type="submit" class="btn" style="width:100%;margin-top:8px;" id="loginBtn">Inloggen</button>
+    </form>
+  </main>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const notice = document.getElementById('notice');
+    const btn = document.getElementById('loginBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      notice.classList.remove('show');
+      btn.disabled = true; btn.textContent = 'Bezig…';
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          notice.textContent = json.error || 'Login mislukt.';
+          notice.classList.add('show');
+          btn.disabled = false; btn.textContent = 'Inloggen';
+          return;
+        }
+        window.location.href = '/admin';
+      } catch {
+        notice.textContent = 'Kan geen verbinding maken met de server.';
+        notice.classList.add('show');
+        btn.disabled = false; btn.textContent = 'Inloggen';
+      }
+    });
+  </script>
+</body>
+</html>

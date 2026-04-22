@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin dashboard — Klanttevredenheid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab-btn {
+      padding: 10px 16px; background: transparent; border: none;
+      color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    table.data { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    table.data th, table.data td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    table.data th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; background: var(--bg-elev); }
+    table.data tr:last-child td { border-bottom: none; }
+
+    .inline-form { display: grid; gap: 10px; grid-template-columns: 1fr 1fr 1fr auto; align-items: end; margin-bottom: 16px; }
+    .inline-form input { padding: 10px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; }
+    .inline-form button { padding: 10px 16px; }
+
+    .btn.small { padding: 8px 14px; font-size: 13px; }
+    .btn.danger { background: #ef4444; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25); }
+    .btn.danger:hover { box-shadow: 0 8px 30px rgba(239, 68, 68, 0.35); }
+
+    .status-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .status-pill.active { background: #ecfdf5; color: #065f46; }
+    .status-pill.inactive { background: #f1f5f9; color: #64748b; }
+
+    .contact-history { margin-top: 32px; }
+    .contact-history h3 { font-size: 16px; margin: 0 0 12px; }
+    .timeline { display: grid; gap: 8px; }
+    .timeline-item {
+      display: grid; grid-template-columns: 110px 80px 1fr auto; gap: 12px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 14px; font-size: 14px;
+    }
+    .timeline-item .score { font-weight: 700; font-size: 18px; color: var(--accent); }
+    .timeline-item .when { color: var(--text-muted); font-size: 13px; }
+
+    .csv-drop {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 24px; text-align: center; color: var(--text-muted);
+      cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .csv-drop:hover { border-color: var(--accent); background: rgba(124, 92, 255, 0.04); }
+    .csv-drop input { display: none; }
+
+    .settings-form { max-width: 560px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+    .settings-form .field { margin-bottom: 16px; }
+    .settings-form label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+    .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+    .switch input { accent-color: var(--accent); width: 18px; height: 18px; }
+
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 24px 0 12px; gap: 12px; flex-wrap: wrap;
+    }
+    .section-head h2 { margin: 0; }
+
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; max-width: 360px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 16px; box-shadow: var(--shadow); font-size: 14px;
+      transform: translateY(20px); opacity: 0; transition: all 0.2s ease; z-index: 100;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .toast.success { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+  </style>
+</head>
+<body>
+  <main class="container wide">
+    <div class="toolbar">
+      <div class="brand" style="margin:0;">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="name">Admin dashboard</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn secondary small" id="refreshBtn">Verversen</button>
+        <button class="btn secondary small" id="logoutBtn">Uitloggen</button>
+      </div>
+    </div>
+
+    <h1>Klanttevredenheid</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Overzicht</button>
+      <button class="tab-btn" data-tab="contacts">Contacten</button>
+      <button class="tab-btn" data-tab="rounds">Rondes</button>
+      <button class="tab-btn" data-tab="settings">Instellingen</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="tab-pane active" id="tab-overview">
+      <div id="stats" class="stats"></div>
+      <h2 style="margin-top:32px;">Recente reacties</h2>
+      <div id="recentList" class="response-list"></div>
+      <div class="contact-history" id="perContact"></div>
+    </section>
+
+    <!-- CONTACTS -->
+    <section class="tab-pane" id="tab-contacts">
+      <div class="section-head">
+        <h2>Contacten</h2>
+      </div>
+      <form class="inline-form" id="addContactForm">
+        <input type="text" name="name" placeholder="Naam" />
+        <input type="text" name="company" placeholder="Bedrijf" />
+        <input type="email" name="email" placeholder="E-mail (verplicht)" required />
+        <button type="submit" class="btn small">Toevoegen</button>
+      </form>
+
+      <label class="csv-drop" for="csvFile">
+        <input type="file" id="csvFile" accept=".csv,text/csv" />
+        <div><strong>CSV-bestand importeren</strong></div>
+        <div style="font-size:13px;margin-top:4px;">Kolommen: name, company, email (of nederlandse varianten)</div>
+      </label>
+      <div id="csvResult" class="meta" style="margin-bottom:12px;"></div>
+
+      <table class="data" id="contactsTable">
+        <thead>
+          <tr><th>Naam</th><th>Bedrijf</th><th>E-mail</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ROUNDS -->
+    <section class="tab-pane" id="tab-rounds">
+      <div class="section-head">
+        <h2>Rondes</h2>
+        <button class="btn" id="startRoundBtn">Nieuwe ronde starten</button>
+      </div>
+      <p class="meta" style="margin-top:0;">Een ronde stuurt elk actief contact een unieke survey-link per e-mail.</p>
+
+      <table class="data" id="roundsTable">
+        <thead>
+          <tr><th>Datum</th><th>Trigger</th><th>Verzonden</th><th>Reacties</th><th>Response rate</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="tab-pane" id="tab-settings">
+      <div class="section-head"><h2>Instellingen</h2></div>
+
+      <form class="settings-form" id="settingsForm">
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="autoEnabled" />
+            <span>Automatisch periodiek een nieuwe ronde versturen</span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="intervalDays">Interval (in dagen)</label>
+          <input type="number" id="intervalDays" min="1" max="3650" step="1" style="max-width:160px;" />
+          <div class="meta" style="margin-top:6px;">
+            Bijvoorbeeld 30 voor maandelijks, 90 voor kwartaal.
+          </div>
+        </div>
+        <div class="field">
+          <label>Laatst verzonden ronde</label>
+          <div id="lastRoundAt" class="meta" style="margin:0;">—</div>
+        </div>
+        <button type="submit" class="btn small">Opslaan</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function toast(msg, kind = '') {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + kind;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      $('#tab-' + b.dataset.tab).classList.add('active');
+    }));
+
+    // ===== Overview =====
+    function renderStats(s) {
+      $('#stats').innerHTML = [
+        { label: 'Inzendingen', value: s.count },
+        { label: 'Cijfer (gem.)', value: s.avgOverall ?? '—', suffix: s.avgOverall != null ? ' / 10' : '' },
+      ].map(c => `
+        <div class="stat">
+          <div class="label">${escapeHtml(c.label)}</div>
+          <div class="value">${escapeHtml(String(c.value))}${c.suffix ? `<span style="font-size:16px;color:var(--text-muted);background:none;-webkit-text-fill-color:var(--text-muted);">${c.suffix}</span>` : ''}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderRecentList(items) {
+      if (!items.length) { $('#recentList').innerHTML = '<div class="empty">Nog geen inzendingen.</div>'; return; }
+      $('#recentList').innerHTML = items.slice(0, 10).map(e => {
+        const a = e.answers || {};
+        const who = e.contact
+          ? [e.contact.name, e.contact.company].filter(Boolean).join(' — ')
+          : ([a.name, a.company].filter(Boolean).join(' — ') || 'Anoniem');
+        const when = new Date(e.createdAt).toLocaleString('nl-NL');
+        const rows = [
+          a.q1_overall != null ? `<dt>Cijfer</dt><dd>${escapeHtml(String(a.q1_overall))}</dd>` : '',
+          a.q6_likes ? `<dt>Waardeert</dt><dd>${escapeHtml(a.q6_likes)}</dd>` : '',
+          a.q7_improve ? `<dt>Verbeteren</dt><dd>${escapeHtml(a.q7_improve)}</dd>` : '',
+          a.q4_ai_opportunities ? `<dt>AI-kansen</dt><dd>${escapeHtml(a.q4_ai_opportunities)}</dd>` : '',
+        ].join('');
+        return `<div class="response">
+          <div class="head"><span class="who">${escapeHtml(who)}</span><span class="when">${escapeHtml(when)}</span></div>
+          <dl>${rows}</dl>
+        </div>`;
+      }).join('');
+    }
+
+    function renderPerContact(items) {
+      // Groepeer per contactId
+      const byContact = new Map();
+      for (const e of items) {
+        if (!e.contactId || !e.contact) continue;
+        const arr = byContact.get(e.contactId) || [];
+        arr.push(e);
+        byContact.set(e.contactId, arr);
+      }
+      const rendered = [];
+      byContact.forEach((arr, cid) => {
+        const contact = arr[0].contact;
+        const who = [contact.name, contact.company].filter(Boolean).join(' — ') || contact.email;
+        const timeline = [...arr].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+          .map(e => {
+            const when = new Date(e.createdAt).toLocaleDateString('nl-NL');
+            const score = (e.answers || {}).q1_overall ?? '—';
+            const notes = [(e.answers || {}).q6_likes, (e.answers || {}).q7_improve, (e.answers || {}).q4_ai_opportunities].filter(Boolean).join(' · ');
+            return `<div class="timeline-item">
+              <span class="when">${escapeHtml(when)}</span>
+              <span class="score">${escapeHtml(String(score))}${score !== '—' ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400;"> /10</span>' : ''}</span>
+              <span>${escapeHtml(notes || '—')}</span>
+              <span></span>
+            </div>`;
+          }).join('');
+        rendered.push(`<div style="margin-bottom:20px;">
+          <h3>${escapeHtml(who)}</h3>
+          <div class="timeline">${timeline}</div>
+        </div>`);
+      });
+      $('#perContact').innerHTML = rendered.length
+        ? `<h2 style="margin-top:32px;">Per contact</h2>${rendered.join('')}`
+        : '';
+    }
+
+    async function loadOverview() {
+      const res = await fetch('/api/responses', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      renderStats(data.stats);
+      renderRecentList(data.responses);
+      renderPerContact(data.responses);
+    }
+
+    // ===== Contacts =====
+    async function loadContacts() {
+      const res = await fetch('/api/contacts', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const tbody = $('#contactsTable tbody');
+      if (!data.contacts.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Nog geen contacten.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.contacts.map(c => `
+        <tr>
+          <td>${escapeHtml(c.name || '—')}</td>
+          <td>${escapeHtml(c.company || '—')}</td>
+          <td>${escapeHtml(c.email)}</td>
+          <td><span class="status-pill ${c.active ? 'active' : 'inactive'}">${c.active ? 'actief' : 'inactief'}</span></td>
+          <td>
+            <button class="btn secondary small" data-toggle="${c.id}" data-active="${c.active ? '1' : '0'}">
+              ${c.active ? 'Deactiveren' : 'Activeren'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('button[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.toggle;
+          const wasActive = btn.dataset.active === '1';
+          const r = await fetch('/api/contacts?id=' + encodeURIComponent(id), {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: !wasActive }),
+          });
+          if (r.ok) { toast('Bijgewerkt', 'success'); loadContacts(); }
+          else toast('Kon niet bijwerken', 'error');
+        });
+      });
+    }
+
+    $('#addContactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = Object.fromEntries(fd.entries());
+      const r = await fetch('/api/contacts', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (r.ok) { toast('Contact toegevoegd', 'success'); e.target.reset(); loadContacts(); }
+      else toast(j.error || 'Kan contact niet toevoegen', 'error');
+    });
+
+    $('#csvFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const r = await fetch('/api/contacts/import', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'text/csv' },
+        body: text,
+      });
+      const j = await r.json();
+      if (r.ok) {
+        $('#csvResult').textContent = `Import: ${j.created} toegevoegd, ${j.skipped} overgeslagen (duplicaten of geen e-mail).`;
+        toast('Import voltooid', 'success');
+        loadContacts();
+      } else {
+        toast(j.error || 'Import mislukt', 'error');
+      }
+      e.target.value = '';
+    });
+
+    // ===== Rounds =====
+    async function loadRounds() {
+      const res = await fetch('/api/rounds', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const tbody = $('#roundsTable tbody');
+      if (!data.rounds.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Nog geen rondes verstuurd.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.rounds.map(r => `
+        <tr>
+          <td>${escapeHtml(new Date(r.createdAt).toLocaleString('nl-NL'))}</td>
+          <td>${escapeHtml(r.triggeredBy || '—')}</td>
+          <td>${r.sent} / ${r.total}</td>
+          <td>${r.responded}</td>
+          <td>${r.responseRate}%</td>
+        </tr>
+      `).join('');
+    }
+
+    $('#startRoundBtn').addEventListener('click', async () => {
+      if (!confirm('Nieuwe ronde starten? Dit stuurt elk actief contact een mail.')) return;
+      $('#startRoundBtn').disabled = true;
+      $('#startRoundBtn').textContent = 'Versturen…';
+      const r = await fetch('/api/rounds', { method: 'POST', credentials: 'same-origin' });
+      const j = await r.json();
+      $('#startRoundBtn').disabled = false;
+      $('#startRoundBtn').textContent = 'Nieuwe ronde starten';
+      if (r.ok) {
+        toast(`Ronde verstuurd — ${j.sent} verzonden, ${j.failed} mislukt`, j.failed ? 'error' : 'success');
+        loadRounds();
+      } else {
+        toast(j.error || 'Kon ronde niet starten', 'error');
+      }
+    });
+
+    // ===== Settings =====
+    async function loadSettings() {
+      const res = await fetch('/api/settings', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      $('#autoEnabled').checked = !!data.settings.autoEnabled;
+      $('#intervalDays').value = data.settings.intervalDays;
+      $('#lastRoundAt').textContent = data.settings.lastRoundAt
+        ? new Date(data.settings.lastRoundAt).toLocaleString('nl-NL')
+        : 'Nog geen ronde verstuurd';
+    }
+
+    $('#settingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const r = await fetch('/api/settings', {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          autoEnabled: $('#autoEnabled').checked,
+          intervalDays: Number($('#intervalDays').value),
+        }),
+      });
+      const j = await r.json();
+      if (r.ok) toast('Instellingen opgeslagen', 'success');
+      else toast(j.error || 'Kan niet opslaan', 'error');
+    });
+
+    // Logout + refresh
+    $('#refreshBtn').addEventListener('click', loadAll);
+    $('#logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/login', { method: 'DELETE', credentials: 'same-origin' });
+      window.location.href = '/admin/login';
+    });
+
+    function loadAll() {
+      loadOverview();
+      loadContacts();
+      loadRounds();
+      loadSettings();
+    }
+    loadAll();
+  </script>
+</body>
+</html>

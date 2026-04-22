@@ -1,0 +1,18 @@
+[
+  {
+    "id": "c_moa5qqwtb0b93002",
+    "name": "Sanne",
+    "company": "Acme",
+    "email": "sanne@acme.nl",
+    "active": true,
+    "createdAt": "2026-04-22T14:38:13.949Z"
+  },
+  {
+    "id": "c_moa5qqx0273fd5f5",
+    "name": "Martijn",
+    "company": "Bakker",
+    "email": "martijn@bakker.nl",
+    "active": true,
+    "createdAt": "2026-04-22T14:38:13.956Z"
+  }
+]
