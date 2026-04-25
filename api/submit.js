@@ -77,7 +77,6 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: 'Invalid JSON' }));
   }
 
-  // Honeypot — als ingevuld, stilzwijgend afwijzen
   if (body.website) {
     res.statusCode = 204;
     return res.end();
@@ -93,7 +92,6 @@ module.exports = async (req, res) => {
     email: clean(body.email, 160),
   };
 
-  // Verplichte velden
   const requiredKeys = ['q1_overall'];
   for (const k of requiredKeys) {
     if (answers[k] == null) {
@@ -102,19 +100,36 @@ module.exports = async (req, res) => {
     }
   }
 
-  // Optioneel: koppel aan invitation/contact via token
+  // Koppel aan invitation/contact:
+  //   1) als token meegestuurd wordt → preferred path
+  //   2) anders, als e-mail matcht met een bestaand contact + open uitnodiging → smart-link
   let invitation = null;
   let contact = null;
+
   if (body.token) {
     invitation = await roundsLib.getInvitationByToken(String(body.token));
     if (invitation) {
       contact = await contactsLib.getById(invitation.contactId);
-      if (contact) {
-        answers.name = contact.name || answers.name;
-        answers.company = contact.company || answers.company;
-        answers.email = contact.email || answers.email;
-      }
     }
+  } else if (answers.email) {
+    contact = await contactsLib.getByEmail(answers.email);
+    if (contact) {
+      const invitations = await roundsLib.getInvitationsByContact(contact.id);
+      const open = invitations
+        .filter(i => !i.respondedAt)
+        .sort((a, b) => {
+          const ta = new Date(a.sentAt || 0).getTime();
+          const tb = new Date(b.sentAt || 0).getTime();
+          return tb - ta;
+        });
+      if (open.length > 0) invitation = open[0];
+    }
+  }
+
+  if (contact) {
+    answers.name = contact.name || answers.name;
+    answers.company = contact.company || answers.company;
+    answers.email = contact.email || answers.email;
   }
 
   const entry = {
@@ -135,7 +150,6 @@ module.exports = async (req, res) => {
     console.error('Storage error:', e);
   }
 
-  // E-mail versturen via Resend
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.MAIL_TO || 'jzahi@machine-learning.company';
   const from = process.env.MAIL_FROM || 'onboarding@resend.dev';
@@ -153,7 +167,6 @@ module.exports = async (req, res) => {
       });
     } catch (e) {
       console.error('Resend error:', e);
-      // Response is al opgeslagen; geef 'partial success' terug maar vanuit client-oogpunt ok.
     }
   } else {
     console.warn('RESEND_API_KEY ontbreekt — mail niet verzonden. Antwoord is wel opgeslagen.');
