@@ -1,11 +1,8 @@
 // Eenvoudige lokale server — draai met: node local-server.js
-// Vereist: npm install
-// Op Vercel worden de /api/*.js functies automatisch gebruikt; dit bestand niet.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-// .env loader
 try {
   const envPath = path.join(__dirname, '.env');
   if (fs.existsSync(envPath)) {
@@ -28,6 +25,7 @@ const rounds = require('./api/rounds');
 const settings = require('./api/settings');
 const cron = require('./api/cron');
 const invitation = require('./api/invitation');
+const optout = require('./api/optout');
 const campaign = require('./lib/campaign');
 
 const MIME = {
@@ -68,6 +66,7 @@ const server = http.createServer(async (req, res) => {
     if (req.url.startsWith('/api/settings')) return settings(req, res);
     if (req.url.startsWith('/api/cron')) return cron(req, res);
     if (req.url.startsWith('/api/invitation')) return invitation(req, res);
+    if (req.url.startsWith('/api/optout')) return optout(req, res);
     serveStatic(req, res);
   } catch (e) {
     console.error(e);
@@ -76,14 +75,16 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-// Lokale scheduler — checkt elke uur of een auto-ronde moet draaien.
-// Op Vercel wordt hiervoor Vercel Cron gebruikt (zie vercel.json).
 setInterval(async () => {
   try {
     if (await campaign.dueForAutoRound()) {
       console.log('[scheduler] auto-ronde is due — starten...');
       const result = await campaign.startRound({ triggeredBy: 'auto' });
       console.log('[scheduler] resultaat:', result);
+    }
+    const reminderResult = await campaign.processReminders();
+    if (reminderResult.sent > 0) {
+      console.log('[scheduler] reminders verstuurd:', reminderResult);
     }
   } catch (e) {
     console.error('[scheduler] fout:', e);
