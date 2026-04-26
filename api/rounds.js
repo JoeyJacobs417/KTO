@@ -9,6 +9,18 @@ function baseUrl() {
   return '';
 }
 
+function readJson(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', c => { data += c; if (data.length > 100_000) req.destroy(); });
+    req.on('end', () => {
+      if (!data) return resolve({});
+      try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
 module.exports = async (req, res) => {
   if (!isAuthenticated(req)) {
     res.statusCode = 401;
@@ -59,8 +71,18 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
+    let body = {};
     try {
-      const result = await campaign.startRound({ triggeredBy: 'manual' });
+      body = await readJson(req);
+    } catch {
+      // ongeldige JSON → behandel als geen body
+    }
+    try {
+      const result = await campaign.startRound({
+        triggeredBy: 'manual',
+        contactIds: Array.isArray(body.contactIds) ? body.contactIds : null,
+        sendEmail: body.sendEmail !== false,
+      });
       if (!result.round) {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: result.error || 'Kan ronde niet starten.' }));
