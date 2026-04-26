@@ -1,5 +1,7 @@
 // Cron endpoint — wordt aangeroepen door Vercel Cron.
-// Beveiligd via CRON_SECRET (Vercel stuurt die mee als Authorization: Bearer header).
+// Doet twee dingen:
+//   1) Auto-ronde starten als die "due" is
+//   2) Reminders versturen voor non-responders (ongeacht auto-ronde)
 const campaign = require('../lib/campaign');
 
 module.exports = async (req, res) => {
@@ -19,17 +21,26 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: 'Unauthorized' }));
   }
 
-  if (!(await campaign.dueForAutoRound())) {
-    res.statusCode = 200;
-    return res.end(JSON.stringify({ ok: true, triggered: false, reason: 'not_due' }));
+  const result = { ok: true };
+
+  // 1) Auto-ronde
+  try {
+    if (await campaign.dueForAutoRound()) {
+      result.autoRound = await campaign.startRound({ triggeredBy: 'auto' });
+    } else {
+      result.autoRound = { triggered: false, reason: 'not_due' };
+    }
+  } catch (e) {
+    result.autoRound = { error: String(e) };
   }
 
+  // 2) Reminders
   try {
-    const result = await campaign.startRound({ triggeredBy: 'auto' });
-    res.statusCode = 200;
-    return res.end(JSON.stringify({ ok: true, triggered: true, ...result }));
+    result.reminders = await campaign.processReminders();
   } catch (e) {
-    res.statusCode = 500;
-    return res.end(JSON.stringify({ error: String(e) }));
+    result.reminders = { error: String(e) };
   }
+
+  res.statusCode = 200;
+  res.end(JSON.stringify(result));
 };
