@@ -22,11 +22,13 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: 'Ongeldige of verlopen link.' }));
   }
 
+  const expired = rounds.isInvitationExpired(inv);
   const contact = await contacts.getById(inv.contactId);
   res.statusCode = 200;
   res.end(JSON.stringify({
     ok: true,
     alreadyResponded: !!inv.respondedAt,
+    expired,
     contact: contact ? { name: contact.name, company: contact.company, email: contact.email } : null,
   }));
 };
