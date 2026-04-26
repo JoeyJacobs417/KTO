@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Klanttevredenheidsonderzoek</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .status-page { text-align: center; padding: 24px 0; }
+    .status-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 700; margin-bottom: 20px;
+    }
+    .status-icon.done { background: #ecfdf5; color: #065f46; }
+    .status-icon.expired { background: #fef3c7; color: #92400e; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="container" id="mainContainer">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div class="name">Klanttevredenheidsonderzoek</div>
+    </div>
+
+    <!-- Status-pagina (alreadyResponded / expired / invalid) -->
+    <div id="statusPage" class="hidden status-page">
+      <div class="status-icon" id="statusIcon"></div>
+      <h1 id="statusTitle"></h1>
+      <p class="lead" id="statusMessage"></p>
+    </div>
+
+    <!-- Survey-formulier -->
+    <div id="formContainer">
+      <h1 id="surveyTitle">We horen graag van je</h1>
+      <p class="lead">Jouw feedback helpt ons onze dienstverlening te verbeteren. Dit kost je minder dan 3 minuten.</p>
+
+      <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+
+      <div class="notice" id="notice"></div>
+
+      <form id="surveyForm" class="card" novalidate>
+        <div class="question" data-required="true">
+          <label class="label" for="q1_overall">1. Welk cijfer geef je ons voor onze dienstverlening? <span class="hint">(1 t/m 10)</span></label>
+          <input type="number" id="q1_overall" name="q1_overall" min="1" max="10" step="1" required inputmode="numeric" placeholder="8" class="input-rating" />
+        </div>
+
+        <div class="question">
+          <label class="label" for="q6_likes">2. Wat waardeer je het meest aan onze samenwerking? <span class="hint">(optioneel)</span></label>
+          <textarea id="q6_likes" name="q6_likes" maxlength="600" placeholder="Bijvoorbeeld: snelle reactietijd, vakkennis, ..."></textarea>
+        </div>
+
+        <div class="question">
+          <label class="label" for="q7_improve">3. Wat zouden we kunnen verbeteren? <span class="hint">(optioneel)</span></label>
+          <textarea id="q7_improve" name="q7_improve" maxlength="600" placeholder="Concrete suggesties zijn zeer welkom"></textarea>
+        </div>
+
+        <div class="question">
+          <label class="label" for="q4_ai_opportunities">4. Waar zie je nog meer kansen voor AI? <span class="hint">(optioneel)</span></label>
+          <textarea id="q4_ai_opportunities" name="q4_ai_opportunities" maxlength="600" placeholder="Bijvoorbeeld: processen, afdelingen of taken waar AI kan helpen"></textarea>
+        </div>
+
+        <div class="question" id="contactQuestion">
+          <label class="label">5. Contactgegevens <span class="hint">(optioneel — handig voor follow-up)</span></label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <input type="text" name="name" placeholder="Naam" maxlength="120" />
+            <input type="text" name="company" placeholder="Bedrijf" maxlength="120" />
+          </div>
+          <input type="email" name="email" placeholder="E-mailadres" maxlength="160" style="margin-top:12px;" />
+        </div>
+
+        <input type="hidden" name="token" id="tokenField" />
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true" />
+
+        <div class="actions">
+          <button type="submit" class="btn" id="submitBtn">Versturen</button>
+        </div>
+      </form>
+
+      <p class="meta">We behandelen je antwoorden vertrouwelijk.</p>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById('surveyForm');
+    const formContainer = document.getElementById('formContainer');
+    const statusPage = document.getElementById('statusPage');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusMessage = document.getElementById('statusMessage');
+    const bar = document.getElementById('progressBar');
+    const notice = document.getElementById('notice');
+    const submitBtn = document.getElementById('submitBtn');
+    const requiredQs = Array.from(document.querySelectorAll('.question[data-required="true"]'));
+
+    function showStatus(kind, title, message) {
+      formContainer.classList.add('hidden');
+      statusPage.classList.remove('hidden');
+      statusIcon.className = 'status-icon ' + kind;
+      statusIcon.textContent = kind === 'done' ? '✓' : (kind === 'expired' ? '!' : '?');
+      statusTitle.textContent = title;
+      statusMessage.textContent = message;
+    }
+
+    (async function hydrateFromToken() {
+      const params = new URLSearchParams(window.location.search);
+      const tok = params.get('t');
+      if (!tok) return;
+      document.getElementById('tokenField').value = tok;
+      try {
+        const res = await fetch('/api/invitation?t=' + encodeURIComponent(tok));
+        const data = await res.json();
+        if (!res.ok) {
+          showStatus('expired', 'Ongeldige link', data.error || 'Deze link werkt niet meer. Neem contact met ons op voor een nieuwe.');
+          return;
+        }
+        if (data.alreadyResponded) {
+          showStatus('done', 'Deze survey is al ingevuld', 'Bedankt voor je eerdere reactie. We hebben hem goed ontvangen.');
+          return;
+        }
+        if (data.expired) {
+          showStatus('expired', 'Deze link is verlopen', 'Survey-links zijn 30 dagen geldig. Neem contact met ons op als je alsnog je feedback wilt delen.');
+          return;
+        }
+        if (data.contact) {
+          const nameInput = form.querySelector('input[name="name"]');
+          const compInput = form.querySelector('input[name="company"]');
+          const emailInput = form.querySelector('input[name="email"]');
+          if (nameInput) nameInput.value = data.contact.name || '';
+          if (compInput) compInput.value = data.contact.company || '';
+          if (emailInput) emailInput.value = data.contact.email || '';
+          const cq = document.getElementById('contactQuestion');
+          if (cq) cq.style.display = 'none';
+
+          const greetName = data.contact.name ? data.contact.name.split(' ')[0] : null;
+          if (greetName) {
+            document.getElementById('surveyTitle').textContent = `Hoi ${greetName}, we horen graag van je`;
+          }
+        }
+      } catch {}
+    })();
+
+    function isAnswered(q) {
+      const radio = q.querySelector('input[type="radio"]:checked');
+      if (radio) return true;
+      const num = q.querySelector('input[type="number"]');
+      if (num) {
+        const v = Number(num.value);
+        const min = Number(num.min), max = Number(num.max);
+        return Number.isFinite(v) && v >= min && v <= max;
+      }
+      return false;
+    }
+
+    function updateProgress() {
+      const answered = requiredQs.filter(isAnswered).length;
+      bar.style.width = ((answered / requiredQs.length) * 100) + '%';
+    }
+
+    form.addEventListener('change', updateProgress);
+    form.addEventListener('input', updateProgress);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      notice.classList.remove('show');
+
+      for (const q of requiredQs) {
+        if (!isAnswered(q)) {
+          notice.textContent = 'Vul alsjeblieft alle verplichte vragen in.';
+          notice.classList.add('show');
+          q.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Versturen…';
+
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      try {
+        const res = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (res.status === 410) {
+          // Token verlopen of al beantwoord
+          const j = await res.json().catch(() => ({}));
+          if ((j.error || '').includes('al ingevuld')) {
+            showStatus('done', 'Deze survey is al ingevuld', 'Bedankt voor je eerdere reactie. We hebben hem goed ontvangen.');
+          } else {
+            showStatus('expired', 'Deze link is verlopen', 'Survey-links zijn 30 dagen geldig. Neem contact met ons op voor een nieuwe link.');
+          }
+          return;
+        }
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        window.location.href = '/bedankt';
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Versturen';
+        notice.textContent = 'Er ging iets mis. Probeer het later opnieuw.';
+        notice.classList.add('show');
+      }
+    });
+
+    updateProgress();
+  </script>
+</body>
+</html>

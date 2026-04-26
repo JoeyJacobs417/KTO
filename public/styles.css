@@ -1,0 +1,388 @@
+/* =============================================================
+   Huisstijl-variabelen — pas deze aan om te tunen naar powersuite.ai
+   ============================================================= */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-elev: #f8fafc;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --accent: #7c5cff;          /* primair paars/violet */
+  --accent-2: #4ea3ff;        /* secundair blauw */
+  --accent-grad: linear-gradient(135deg, #7c5cff 0%, #4ea3ff 100%);
+  --success: #10b981;
+  --danger: #ef4444;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1000px 600px at 10% -10%, rgba(124, 92, 255, 0.10), transparent 60%),
+    radial-gradient(800px 500px at 100% 10%, rgba(78, 163, 255, 0.08), transparent 60%),
+    var(--bg);
+}
+
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+.wide { max-width: 1100px; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.brand .logo {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--accent-grad);
+  box-shadow: 0 6px 24px rgba(124, 92, 255, 0.25);
+}
+
+.brand .name {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 18px;
+}
+
+h1 {
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+p.lead {
+  color: var(--text-muted);
+  margin-top: 0;
+  margin-bottom: 32px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.question {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.question:last-of-type { border-bottom: none; }
+
+.question .label {
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.question .hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: -4px;
+  margin-bottom: 12px;
+}
+
+/* Rating scale */
+.scale {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scale input[type="radio"] { display: none; }
+
+.scale label {
+  flex: 1 1 auto;
+  min-width: 42px;
+  text-align: center;
+  padding: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: var(--bg-elev);
+  transition: all 0.15s ease;
+  font-weight: 500;
+  user-select: none;
+}
+
+.scale label:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.scale input[type="radio"]:checked + label {
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(124, 92, 255, 0.25);
+}
+
+.scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Radio group */
+.radio-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.radio-group input[type="radio"] { display: none; }
+.radio-group label {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.radio-group label:hover { border-color: var(--accent); }
+.radio-group input[type="radio"]:checked + label {
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #fff;
+}
+
+textarea, input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  transition: border-color 0.15s ease;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+textarea:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Grote, prominente cijfer-input voor de hoofd-rating-vraag */
+.input-rating {
+  max-width: 200px;
+  font-size: 32px !important;
+  font-weight: 700;
+  text-align: center;
+  padding: 18px 16px !important;
+  letter-spacing: -0.01em;
+  background: var(--surface) !important;
+  border-width: 2px !important;
+}
+.input-rating:focus { box-shadow: 0 4px 18px rgba(124, 92, 255, 0.18); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--accent-grad);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 20px rgba(124, 92, 255, 0.25);
+}
+
+.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124, 92, 255, 0.35); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.btn.secondary:hover { border-color: var(--accent); box-shadow: none; }
+
+.progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent-grad);
+  transition: width 0.3s ease;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+.notice {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  margin-bottom: 16px;
+  display: none;
+}
+.notice.show { display: block; }
+
+/* ========== Admin dashboard ========== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.stat .label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.stat .value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.response-list {
+  display: grid;
+  gap: 12px;
+}
+
+.response {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+
+.response .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.response .who { font-weight: 600; }
+.response .when { color: var(--text-muted); font-size: 13px; }
+
+.response dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 14px;
+}
+.response dt { color: var(--text-muted); }
+.response dd { margin: 0; }
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-card .field {
+  margin-bottom: 14px;
+}
+
+.login-card label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
