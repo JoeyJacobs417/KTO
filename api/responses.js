@@ -16,13 +16,34 @@ function readJson(req) {
 }
 
 function computeStats(entries) {
-  // Negeer uitgesloten reacties in stats
   const counted = entries.filter(e => !e.excluded);
   const n = counted.length;
-  if (n === 0) return { count: 0, avgOverall: null };
-  let sum = 0;
-  for (const e of counted) sum += Number((e.answers || {}).q1_overall) || 0;
-  return { count: n, avgOverall: Math.round((sum / n) * 100) / 100 };
+  if (n === 0) {
+    return {
+      count: 0, avgOverall: null, nps: null,
+      promoters: 0, passives: 0, detractors: 0,
+      promotersPct: 0, passivesPct: 0, detractorsPct: 0,
+    };
+  }
+  let sum = 0, promoters = 0, passives = 0, detractors = 0;
+  for (const e of counted) {
+    const score = Number((e.answers || {}).q1_overall) || 0;
+    sum += score;
+    if (score >= 9) promoters++;
+    else if (score >= 7) passives++;
+    else detractors++;
+  }
+  const avg = Math.round((sum / n) * 100) / 100;
+  const nps = Math.round(((promoters - detractors) / n) * 100);
+  return {
+    count: n,
+    avgOverall: avg,
+    nps,
+    promoters, passives, detractors,
+    promotersPct: Math.round((promoters / n) * 100),
+    passivesPct: Math.round((passives / n) * 100),
+    detractorsPct: Math.round((detractors / n) * 100),
+  };
 }
 
 function csvEscape(v) {
@@ -33,7 +54,7 @@ function csvEscape(v) {
 
 function buildCsv(responses) {
   const headers = [
-    'Datum', 'Naam', 'Bedrijf', 'E-mail',
+    'Datum', 'Naam', 'Bedrijf', 'E-mail', 'Account manager',
     'Cijfer', 'Waardeert', 'Verbeteren', 'AI-kansen', 'Ronde-id', 'Uitgesloten',
   ];
   const rows = responses.map(e => {
@@ -45,6 +66,7 @@ function buildCsv(responses) {
       c.name || a.name || '',
       c.company || a.company || '',
       c.email || a.email || '',
+      c.accountManager || '',
       a.q1_overall != null ? a.q1_overall : '',
       a.q6_likes || '',
       a.q7_improve || '',
@@ -67,7 +89,6 @@ module.exports = async (req, res) => {
   const id = url.searchParams.get('id');
   const format = url.searchParams.get('format');
 
-  // PATCH — toggle uitgesloten-status van een reactie
   if (req.method === 'PATCH') {
     if (!id) {
       res.statusCode = 400;
@@ -75,9 +96,8 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify({ error: 'id ontbreekt' }));
     }
     let body;
-    try {
-      body = await readJson(req);
-    } catch {
+    try { body = await readJson(req); }
+    catch {
       res.statusCode = 400;
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify({ error: 'Invalid JSON' }));
@@ -98,7 +118,6 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ ok: true, response: all[idx] }));
   }
 
-  // DELETE — hard verwijderen + reset bijbehorende invitation
   if (req.method === 'DELETE') {
     if (!id) {
       res.statusCode = 400;
@@ -130,7 +149,6 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ ok: true }));
   }
 
-  // GET — JSON of CSV
   const all = await storage.readAll();
   const allContacts = await contactsLib.list();
   const contactsById = Object.fromEntries(allContacts.map(c => [c.id, c]));
@@ -142,7 +160,10 @@ module.exports = async (req, res) => {
       return {
         ...e,
         excluded: !!e.excluded,
-        contact: c ? { id: c.id, name: c.name, company: c.company, email: c.email } : null,
+        contact: c ? {
+          id: c.id, name: c.name, company: c.company, email: c.email,
+          accountManager: c.accountManager || '',
+        } : null,
       };
     });
 
