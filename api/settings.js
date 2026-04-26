@@ -33,6 +33,8 @@ module.exports = async (req, res) => {
       const patch = {};
       if (body.autoEnabled !== undefined) patch.autoEnabled = Boolean(body.autoEnabled);
       if (body.intervalDays !== undefined) patch.intervalDays = Number(body.intervalDays);
+      if (body.reminderEnabled !== undefined) patch.reminderEnabled = Boolean(body.reminderEnabled);
+      if (body.reminderAfterDays !== undefined) patch.reminderAfterDays = Number(body.reminderAfterDays);
       const next = await settings.set(patch);
       res.statusCode = 200;
       return res.end(JSON.stringify({ ok: true, settings: next }));
