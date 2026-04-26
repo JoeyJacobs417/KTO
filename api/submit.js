@@ -2,6 +2,7 @@ const { Resend } = require('resend');
 const storage = require('../lib/storage');
 const roundsLib = require('../lib/rounds');
 const contactsLib = require('../lib/contacts');
+const campaign = require('../lib/campaign');
 const { id: newId } = require('../lib/ids');
 
 const QUESTION_LABELS = {
@@ -100,15 +101,21 @@ module.exports = async (req, res) => {
     }
   }
 
-  // Koppel aan invitation/contact:
-  //   1) als token meegestuurd wordt → preferred path
-  //   2) anders, als e-mail matcht met een bestaand contact + open uitnodiging → smart-link
   let invitation = null;
   let contact = null;
 
   if (body.token) {
     invitation = await roundsLib.getInvitationByToken(String(body.token));
     if (invitation) {
+      // Token-gebaseerde indiening: weiger als verlopen of al beantwoord.
+      if (invitation.respondedAt) {
+        res.statusCode = 410;
+        return res.end(JSON.stringify({ error: 'Deze survey is al ingevuld.' }));
+      }
+      if (roundsLib.isInvitationExpired(invitation)) {
+        res.statusCode = 410;
+        return res.end(JSON.stringify({ error: 'Deze link is verlopen.' }));
+      }
       contact = await contactsLib.getById(invitation.contactId);
     }
   } else if (answers.email) {
@@ -116,7 +123,7 @@ module.exports = async (req, res) => {
     if (contact) {
       const invitations = await roundsLib.getInvitationsByContact(contact.id);
       const open = invitations
-        .filter(i => !i.respondedAt)
+        .filter(i => !i.respondedAt && !roundsLib.isInvitationExpired(i))
         .sort((a, b) => {
           const ta = new Date(a.sentAt || 0).getTime();
           const tb = new Date(b.sentAt || 0).getTime();
@@ -166,11 +173,12 @@ module.exports = async (req, res) => {
         reply_to: answers.email || undefined,
       });
     } catch (e) {
-      console.error('Resend error:', e);
+      console.error('Resend summary error:', e);
     }
-  } else {
-    console.warn('RESEND_API_KEY ontbreekt — mail niet verzonden. Antwoord is wel opgeslagen.');
   }
+
+  try { await campaign.sendDetractorAlert(entry, contact); } catch (e) { console.error('Detractor alert error:', e); }
+  try { await campaign.sendConfirmation(contact, entry); } catch (e) { console.error('Confirmation error:', e); }
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
