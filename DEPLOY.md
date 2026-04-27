@@ -68,18 +68,24 @@ wachtwoorden aan te maken.
 
 ---
 
-## Stap 4 — Vercel KV database koppelen (2 min)
+## Stap 4 — Database koppelen via Upstash (2 min)
 
 Dit zorgt ervoor dat contacten en antwoorden bewaard blijven.
 
 1. Ga naar je project in Vercel. Klik tab **Storage**.
-2. Klik **Create Database** → kies **KV** (Upstash Redis).
-3. Kies de gratis tier, geef hem een naam (bv. `survey-data`), klik **Create**.
-4. Vercel vraagt of je 'm aan dit project wilt koppelen — **Connect**.
-5. Dit zet automatisch de env-vars `KV_REST_API_URL` en `KV_REST_API_TOKEN` voor
-   je klaar. Je hoeft niks handmatig in te typen.
-6. Ga naar tab **Deployments** → klik rechtsboven op het drie-puntjes menu van
-   de laatste deploy → **Redeploy**. Dit laadt de KV-vars in.
+2. Scroll naar **Marketplace Database Providers** en klik op **Upstash**
+   (regel: "Serverless DB (Redis, Vector, Queue, Search)").
+3. Kies **Redis** als database-type.
+4. Kies de **Free / Hobby** tier (10.000 commands/dag — ruim voldoende).
+5. Geef de database een naam, bv. `survey-data`. Kies een Europese regio
+   (bv. `eu-west-1` / Ierland) zodat de latency laag is.
+6. Klik **Create** / **Continue**.
+7. Vercel vraagt aan welk project je 'm wilt koppelen — kies `customer-survey`
+   → **Connect**.
+8. De env-vars (`UPSTASH_REDIS_REST_URL` en `UPSTASH_REDIS_REST_TOKEN`, of
+   de `KV_REST_API_*` variant) worden automatisch aan je project toegevoegd.
+9. Ga naar tab **Deployments** → klik het drie-puntjes menu van de laatste
+   deploy → **Redeploy**. Dit laadt de nieuwe env-vars in.
 
 ---
 

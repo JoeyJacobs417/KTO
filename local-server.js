@@ -1,4 +1,4 @@
-// Eenvoudige lokale server — draai met: node local-server.js
+// Lokale dev-server. Run met: node local-server.js
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -45,6 +45,7 @@ function serveStatic(req, res) {
   if (urlPath === '/admin') urlPath = '/admin.html';
   if (urlPath === '/admin/login') urlPath = '/admin-login.html';
   if (urlPath === '/bedankt') urlPath = '/thanks.html';
+  if (urlPath === '/medewerker') urlPath = '/medewerker.html';
 
   const filePath = path.join(__dirname, 'public', urlPath);
   if (!filePath.startsWith(path.join(__dirname, 'public'))) {
@@ -81,22 +82,23 @@ const server = http.createServer(async (req, res) => {
 
 setInterval(async () => {
   try {
-    if (await campaign.dueForAutoRound()) {
-      console.log('[scheduler] auto-ronde is due — starten...');
-      const result = await campaign.startRound({ triggeredBy: 'auto' });
-      console.log('[scheduler] resultaat:', result);
+    for (const type of ['klant', 'medewerker']) {
+      if (await campaign.dueForAutoRound(type)) {
+        const due = await campaign.dueContacts(type);
+        if (due.length > 0) {
+          console.log(`[scheduler] auto-ronde (${type}) starten voor ${due.length} contacten`);
+          await campaign.startRound({ triggeredBy: 'auto', contactIds: due.map(c => c.id), type });
+        }
+      }
     }
-    const reminderResult = await campaign.processReminders();
-    if (reminderResult.sent > 0) {
-      console.log('[scheduler] reminders verstuurd:', reminderResult);
-    }
-  } catch (e) {
-    console.error('[scheduler] fout:', e);
-  }
+    const r = await campaign.processReminders();
+    if (r.sent > 0) console.log('[scheduler] reminders verstuurd:', r);
+  } catch (e) { console.error('[scheduler] fout:', e); }
 }, 60 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Survey app running:  http://localhost:${PORT}`);
-  console.log(`Admin login:         http://localhost:${PORT}/admin/login`);
+  console.log(`Survey app:           http://localhost:${PORT}/`);
+  console.log(`Medewerker survey:    http://localhost:${PORT}/medewerker`);
+  console.log(`Admin login:          http://localhost:${PORT}/admin/login`);
 });

@@ -1,18 +1,1 @@
-[
-  {
-    "id": "resp_moa5qqyo97c100e4",
-    "createdAt": "2026-04-22T14:38:14.016Z",
-    "contactId": "c_moa5qqwtb0b93002",
-    "roundId": "r_moa5qqxpf9206294",
-    "invitationId": "i_moa5qqxpa25bd2bd",
-    "answers": {
-      "q1_overall": 8,
-      "q6_likes": "Top",
-      "q7_improve": "",
-      "q4_ai_opportunities": "",
-      "name": "Sanne",
-      "company": "Acme",
-      "email": "sanne@acme.nl"
-    }
-  }
-]
+[]

@@ -3,7 +3,8 @@
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/admin/login", "destination": "/admin-login.html" },
-    { "source": "/bedankt", "destination": "/thanks.html" }
+    { "source": "/bedankt", "destination": "/thanks.html" },
+    { "source": "/medewerker", "destination": "/medewerker.html" }
   ],
   "crons": [
     { "path": "/api/cron", "schedule": "0 9 * * *" }

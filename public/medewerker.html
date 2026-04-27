@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Klanttevredenheidsonderzoek</title>
+  <title>Medewerkertevredenheidsonderzoek</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -24,7 +24,7 @@
   <main class="container" id="mainContainer">
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
-      <div class="name">Klanttevredenheidsonderzoek</div>
+      <div class="name">Medewerkertevredenheidsonderzoek</div>
     </div>
 
     <div id="statusPage" class="hidden status-page">
@@ -35,54 +35,54 @@
 
     <div id="formContainer">
       <h1 id="surveyTitle">We horen graag van je</h1>
-      <p class="lead">Jouw feedback helpt ons onze dienstverlening te verbeteren. Dit kost je minder dan 3 minuten.</p>
+      <p class="lead">Je input helpt ons de werkomgeving beter te maken. Dit kost je minder dan 3 minuten en blijft vertrouwelijk.</p>
 
       <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
       <div class="notice" id="notice"></div>
 
       <form id="surveyForm" class="card" novalidate>
         <div class="question" data-required="true">
-          <label class="label" for="q1_overall">1. Welk cijfer geef je ons voor onze dienstverlening? <span class="hint">(1 t/m 10)</span></label>
+          <label class="label" for="q1_overall">1. Welk cijfer geef je je werkbeleving op dit moment? <span class="hint">(1 t/m 10)</span></label>
           <input type="number" id="q1_overall" name="q1_overall" min="1" max="10" step="1" required inputmode="numeric" placeholder="8" class="input-rating" />
           <div class="followup hidden" id="lowReasonFollowup">
             <label class="label" for="q_low_reason">Wat is de belangrijkste reden voor deze score? <span class="hint required">(verplicht)</span></label>
-            <textarea id="q_low_reason" name="q_low_reason" maxlength="600" placeholder="Help ons begrijpen wat er anders moet — concrete voorbeelden zijn waardevol"></textarea>
+            <textarea id="q_low_reason" name="q_low_reason" maxlength="600" placeholder="Help ons begrijpen wat er anders moet"></textarea>
           </div>
         </div>
 
         <div class="question">
-          <label class="label" for="q6_likes">2. Wat waardeer je het meest aan onze samenwerking? <span class="hint">(optioneel)</span></label>
-          <textarea id="q6_likes" name="q6_likes" maxlength="600" placeholder="Bijvoorbeeld: snelle reactietijd, vakkennis, ..."></textarea>
+          <label class="label" for="q6_likes">2. Wat geeft je het meeste energie in je werk? <span class="hint">(optioneel)</span></label>
+          <textarea id="q6_likes" name="q6_likes" maxlength="600" placeholder="Bijvoorbeeld: het team, de uitdagingen, de vrijheid, ..."></textarea>
         </div>
 
         <div class="question">
-          <label class="label" for="q7_improve">3. Wat zouden we kunnen verbeteren? <span class="hint">(optioneel)</span></label>
+          <label class="label" for="q7_improve">3. Wat zou er anders of beter mogen? <span class="hint">(optioneel)</span></label>
           <textarea id="q7_improve" name="q7_improve" maxlength="600" placeholder="Concrete suggesties zijn zeer welkom"></textarea>
         </div>
 
         <div class="question">
-          <label class="label" for="q4_ai_opportunities">4. Waar zie je nog meer kansen voor AI? <span class="hint">(optioneel)</span></label>
-          <textarea id="q4_ai_opportunities" name="q4_ai_opportunities" maxlength="600" placeholder="Bijvoorbeeld: processen, afdelingen of taken waar AI kan helpen"></textarea>
+          <label class="label" for="q4_extra">4. Voel je dat je voldoende kunt groeien en ontwikkelen in je rol? <span class="hint">(optioneel)</span></label>
+          <textarea id="q4_extra" name="q4_extra" maxlength="600" placeholder="Wat heb je nodig om verder te kunnen ontwikkelen?"></textarea>
         </div>
 
         <div class="question" id="contactQuestion">
           <label class="label">5. Contactgegevens <span class="hint">(optioneel — handig voor follow-up)</span></label>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <input type="text" name="name" placeholder="Naam" maxlength="120" />
-            <input type="text" name="company" placeholder="Bedrijf" maxlength="120" />
+            <input type="text" name="company" placeholder="Afdeling / team" maxlength="120" />
           </div>
           <input type="email" name="email" placeholder="E-mailadres" maxlength="160" style="margin-top:12px;" />
         </div>
 
         <input type="hidden" name="token" id="tokenField" />
-        <input type="hidden" name="type" value="klant" />
+        <input type="hidden" name="type" value="medewerker" />
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true" />
 
         <div class="actions">
           <button type="submit" class="btn" id="submitBtn">Versturen</button>
         </div>
       </form>
-      <p class="meta">We behandelen je antwoorden vertrouwelijk.</p>
+      <p class="meta">Je antwoorden zijn vertrouwelijk en worden alleen gebruikt om de werkomgeving te verbeteren.</p>
     </div>
   </main>
 
@@ -119,8 +119,8 @@
         const res = await fetch('/api/invitation?t=' + encodeURIComponent(tok));
         const data = await res.json();
         if (!res.ok) { showStatus('expired', 'Ongeldige link', data.error || 'Deze link werkt niet meer.'); return; }
-        if (data.alreadyResponded) { showStatus('done', 'Deze survey is al ingevuld', 'Bedankt voor je eerdere reactie. We hebben hem goed ontvangen.'); return; }
-        if (data.expired) { showStatus('expired', 'Deze link is verlopen', 'Survey-links zijn 30 dagen geldig. Neem contact met ons op als je alsnog je feedback wilt delen.'); return; }
+        if (data.alreadyResponded) { showStatus('done', 'Deze survey is al ingevuld', 'Bedankt voor je eerdere reactie.'); return; }
+        if (data.expired) { showStatus('expired', 'Deze link is verlopen', 'Survey-links zijn 30 dagen geldig.'); return; }
         if (data.contact) {
           const nameInput = form.querySelector('input[name="name"]');
           const compInput = form.querySelector('input[name="company"]');
