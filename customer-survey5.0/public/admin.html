@@ -1,0 +1,1818 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin dashboard — Klanttevredenheid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab-btn {
+      padding: 10px 16px; background: transparent; border: none;
+      color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    table.data { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    table.data th, table.data td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    table.data th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; background: var(--bg-elev); }
+    table.data tr:last-child td { border-bottom: none; }
+
+    .inline-form { display: grid; gap: 10px; grid-template-columns: 1fr 1fr 1fr 1fr auto; align-items: end; margin-bottom: 16px; }
+    .inline-form input { padding: 10px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; }
+    .inline-form button { padding: 10px 16px; }
+
+    .btn.secondary {
+      background: var(--bg-elev) !important;
+      border: 1px solid var(--border) !important;
+      color: var(--text) !important;
+      box-shadow: none !important;
+      font-weight: 500;
+    }
+    .btn.secondary:hover {
+      border-color: var(--accent) !important;
+      color: var(--accent) !important;
+      background: rgba(124, 92, 255, 0.04) !important;
+    }
+    .btn.small { padding: 8px 14px; font-size: 13px; }
+
+    .status-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .status-pill.active { background: #ecfdf5; color: #065f46; }
+    .status-pill.inactive { background: #f1f5f9; color: #64748b; }
+    .status-pill.optout { background: #fef3c7; color: #92400e; }
+    .status-pill.bounced { background: #fee2e2; color: #991b1b; }
+    .status-pill.sent { background: #eff6ff; color: #1e40af; }
+    .status-pill.pending { background: #fef3c7; color: #92400e; }
+    .status-pill.responded { background: #ecfdf5; color: #065f46; }
+
+    input.am-edit {
+      width: 100%; padding: 4px 8px;
+      background: transparent; border: 1px solid transparent; border-radius: 4px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    input.am-edit:hover { border-color: var(--border); background: var(--bg-elev); }
+    input.am-edit:focus { background: var(--bg-elev); border-color: var(--accent); outline: none; }
+    input.am-edit::placeholder { color: var(--text-muted); font-style: italic; }
+
+    /* Inline interval-override select */
+    select.interval-edit {
+      padding: 4px 8px; border: 1px solid transparent; border-radius: 4px;
+      background: transparent; color: var(--text); font-size: 13px; font-family: inherit;
+      cursor: pointer; min-width: 140px;
+    }
+    select.interval-edit:hover { border-color: var(--border); background: var(--bg-elev); }
+    select.interval-edit:focus { background: var(--bg-elev); border-color: var(--accent); outline: none; }
+    select.interval-edit.overridden { font-weight: 600; color: var(--accent); }
+
+    .timeline { display: grid; gap: 10px; }
+    .timeline-item {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px 18px; font-size: 14px;
+    }
+    .timeline-header {
+      display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap;
+      padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+    .timeline-item .score { font-weight: 700; font-size: 20px; color: var(--accent); }
+    .timeline-item .when { color: var(--text-muted); font-size: 13px; min-width: 90px; }
+    .timeline-answers {
+      display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px;
+      margin: 0; font-size: 14px;
+    }
+    .timeline-answers dt { color: var(--text-muted); font-weight: 500; }
+    .timeline-answers dd { margin: 0; word-wrap: break-word; }
+    .timeline-empty { color: var(--text-muted); font-style: italic; font-size: 13px; }
+    .timeline-item.excluded { opacity: 0.7; background: repeating-linear-gradient(45deg, var(--surface), var(--surface) 12px, var(--bg-elev) 12px, var(--bg-elev) 24px); }
+    .timeline-item.excluded .score { text-decoration: line-through; color: var(--text-muted); }
+    .timeline-item.excluded .timeline-answers dd { text-decoration: line-through; text-decoration-color: var(--text-muted); }
+
+    .csv-drop {
+      display: block;
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 24px; text-align: center; color: var(--text-muted);
+      cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+      margin-bottom: 16px; background: var(--bg-elev);
+    }
+    .csv-drop:hover { border-color: var(--accent); background: rgba(124, 92, 255, 0.04); }
+    .csv-drop input[type="file"] { display: none; }
+
+    .settings-form { max-width: 560px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+    .settings-form .field { margin-bottom: 16px; }
+    .settings-form label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+    .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+    .switch input { accent-color: var(--accent); width: 18px; height: 18px; }
+
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 24px 0 12px; gap: 12px; flex-wrap: wrap;
+    }
+    .section-head h2 { margin: 0; }
+    .section-head .actions-right { display: flex; gap: 8px; align-items: center; }
+
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; max-width: 360px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 16px; box-shadow: var(--shadow); font-size: 14px;
+      transform: translateY(20px); opacity: 0; transition: all 0.2s ease; z-index: 100;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .toast.success { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+
+    .response { position: relative; transition: opacity 0.15s ease; }
+    .response .response-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+    .response .response-actions button {
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      height: 28px; border-radius: 6px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      line-height: 1; transition: all 0.15s ease;
+      font-size: 12px; font-weight: 500;
+    }
+    .response .response-actions .exclude-btn { padding: 0 10px; }
+    .response .response-actions .exclude-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(124, 92, 255, 0.04); }
+    .response .response-actions .delete-btn { width: 28px; padding: 0; font-size: 16px; }
+    .response .response-actions .delete-btn:hover { color: #ef4444; border-color: #ef4444; background: #fef2f2; }
+    .response .head { padding-right: 200px; }
+
+    .response.excluded {
+      background: repeating-linear-gradient(45deg, var(--surface), var(--surface) 12px, var(--bg-elev) 12px, var(--bg-elev) 24px);
+      opacity: 0.85;
+    }
+    .response.excluded dd, .response.excluded .who { text-decoration: line-through; text-decoration-color: var(--text-muted); }
+    .excluded-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      background: #fef3c7; color: #92400e; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    .period-filter {
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 20px; padding: 14px 18px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); font-size: 14px;
+    }
+    .period-label { font-weight: 600; color: var(--text); }
+    .period-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+    .period-btn {
+      padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-elev); color: var(--text); cursor: pointer; font-size: 13px;
+      font-weight: 500; transition: all 0.15s ease;
+    }
+    .period-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .period-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .period-custom { display: flex; gap: 8px; align-items: center; color: var(--text-muted); flex-wrap: wrap; }
+    .period-custom input[type="date"] {
+      padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg-elev); color: var(--text); font-size: 13px; font-family: inherit;
+    }
+
+    .nps-breakdown {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px 20px; box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    .nps-breakdown .nps-title {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 10px; gap: 12px; flex-wrap: wrap;
+    }
+    .nps-breakdown .nps-title .label {
+      font-size: 12px; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 600;
+    }
+    .nps-breakdown .nps-title .totals { font-size: 13px; color: var(--text-muted); }
+    .nps-segments {
+      display: flex; height: 32px; border-radius: var(--radius-sm); overflow: hidden;
+      border: 1px solid var(--border); background: var(--bg-elev);
+    }
+    .nps-seg {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap;
+      transition: width 0.3s ease; min-width: 0;
+    }
+    .nps-seg.promoters { background: #10b981; }
+    .nps-seg.passives { background: #f59e0b; }
+    .nps-seg.detractors { background: #ef4444; }
+    .nps-legend {
+      display: flex; gap: 18px; font-size: 13px; color: var(--text-muted);
+      margin-top: 10px; flex-wrap: wrap;
+    }
+    .nps-legend .dot {
+      display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+      margin-right: 6px; vertical-align: middle;
+    }
+    .nps-legend .dot.promoters { background: #10b981; }
+    .nps-legend .dot.passives { background: #f59e0b; }
+    .nps-legend .dot.detractors { background: #ef4444; }
+
+    .trend-section {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    .trend-section h3 { font-size: 14px; margin: 0 0 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .trend-svg { width: 100%; height: auto; max-height: 280px; display: block; }
+    .trend-empty { color: var(--text-muted); font-size: 14px; padding: 24px; text-align: center; }
+
+    .bulk-bar {
+      display: none;
+      align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 16px; padding: 12px 16px;
+      background: rgba(124, 92, 255, 0.06); border: 1px solid var(--accent); border-radius: var(--radius);
+      font-size: 14px;
+    }
+    .bulk-bar.show { display: flex; }
+    .bulk-bar .count { font-weight: 600; color: var(--accent); }
+    .bulk-bar .spacer { flex: 1; }
+
+    table.data .col-check { width: 36px; padding-right: 4px !important; }
+    table.data input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+    table.data tr.selected td { background: rgba(124, 92, 255, 0.05); }
+    table.data .row-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .round-row { cursor: pointer; }
+    .round-row .chevron { display: inline-block; transition: transform 0.15s ease; color: var(--text-muted); margin-right: 6px; }
+    .round-row.open .chevron { transform: rotate(90deg); }
+    .round-detail-row td { padding: 0 !important; background: var(--bg-elev); }
+    .round-detail-inner { padding: 16px 20px; }
+    .invitations-list { display: grid; gap: 8px; }
+    .invitation-item {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 14px; font-size: 14px;
+    }
+    .invitation-item .who { font-weight: 500; }
+    .invitation-item .who .email { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin: 16px 0 8px; padding: 12px 0;
+      font-size: 14px; color: var(--text);
+      flex-wrap: wrap;
+    }
+    .pagination .pages { font-weight: 500; }
+    .pagination .pages .meta { color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+
+    .dashboard-select {
+      padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg-elev); color: var(--text); font-family: inherit; font-size: 14px;
+      min-width: 280px; max-width: 100%;
+      cursor: pointer;
+    }
+    .dashboard-select:focus { outline: none; border-color: var(--accent); }
+
+    .selected-summary {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 22px; box-shadow: var(--shadow); margin-bottom: 16px;
+    }
+    .selected-summary h3 { font-size: 18px; margin: 0 0 10px; font-weight: 700; }
+    .summary-stats {
+      display: flex; gap: 24px; flex-wrap: wrap;
+      font-size: 14px; color: var(--text);
+    }
+    .summary-stats span strong { color: var(--text-muted); font-weight: 500; }
+
+    h4.subheading {
+      font-size: 14px; margin: 24px 0 10px;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    }
+
+    .company-contacts-table th:nth-child(3), .company-contacts-table th:nth-child(4),
+    .company-contacts-table td:nth-child(3), .company-contacts-table td:nth-child(4) {
+      text-align: right;
+    }
+
+    /* Audit log */
+    .audit-filters {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 16px; padding: 12px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); font-size: 14px;
+    }
+    .audit-filters label { color: var(--text-muted); font-weight: 500; }
+    .audit-filters select, .audit-filters input[type="date"] {
+      padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg-elev); color: var(--text); font-size: 13px; font-family: inherit;
+    }
+    .audit-filters .spacer { flex: 1; }
+
+    .audit-table th, .audit-table td { font-size: 13px; vertical-align: top; }
+    .audit-table .col-time { white-space: nowrap; min-width: 140px; color: var(--text-muted); }
+    .audit-table .col-action { white-space: nowrap; }
+    .audit-table .col-target { max-width: 240px; word-break: break-word; }
+    .audit-table .col-details { color: var(--text-muted); word-break: break-word; }
+
+    .actor-pill {
+      display: inline-block; padding: 2px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+    }
+    .actor-pill.admin { background: rgba(124, 92, 255, 0.12); color: var(--accent); }
+    .actor-pill.system { background: #eff6ff; color: #1e40af; }
+    .actor-pill.public { background: #f1f5f9; color: #64748b; }
+    .actor-pill.unknown { background: #fef2f2; color: #991b1b; }
+
+    /* Contact filters */
+    .contacts-filters {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 16px; padding: 12px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); font-size: 14px;
+    }
+    .contacts-filters input[type="search"], .contacts-filters select {
+      padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg-elev); color: var(--text); font-size: 13px; font-family: inherit;
+    }
+    .contacts-filters input[type="search"] { min-width: 220px; }
+    .contacts-filters .spacer { flex: 1; }
+    .contacts-filters .results-meta { color: var(--text-muted); font-size: 13px; }
+
+    /* Copy modal — fallback voor wanneer clipboard niet werkt */
+    .copy-modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+      padding: 20px;
+    }
+    .copy-modal-overlay.show { display: flex; }
+    .copy-modal {
+      background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+      max-width: 560px; width: 100%; padding: 24px; border: 1px solid var(--border);
+    }
+    .copy-modal h3 { margin: 0 0 12px; font-size: 18px; }
+    .copy-modal p { margin: 0 0 16px; color: var(--text-muted); font-size: 14px; }
+    .copy-modal textarea {
+      width: 100%; min-height: 80px; padding: 10px 12px;
+      background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 13px; resize: vertical;
+    }
+    .copy-modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <main class="container wide">
+    <div class="toolbar">
+      <div class="brand" style="margin:0;">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="name">Admin dashboard</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn secondary small" id="refreshBtn">Verversen</button>
+        <button class="btn secondary small" id="logoutBtn">Uitloggen</button>
+      </div>
+    </div>
+
+    <h1>Klanttevredenheid</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Dashboard</button>
+      <button class="tab-btn" data-tab="contacts">Contacten</button>
+      <button class="tab-btn" data-tab="rounds">Rondes</button>
+      <button class="tab-btn" data-tab="settings">Instellingen</button>
+      <button class="tab-btn" data-tab="audit">Audit log</button>
+    </div>
+
+    <section class="tab-pane active" id="tab-overview">
+      <div class="period-filter">
+        <div class="period-label">Periode:</div>
+        <div class="period-presets">
+          <button class="period-btn active" data-period="all">Alles</button>
+          <button class="period-btn" data-period="30">30 dagen</button>
+          <button class="period-btn" data-period="90">90 dagen</button>
+          <button class="period-btn" data-period="365">12 maanden</button>
+        </div>
+        <div class="period-custom">
+          <span>Van</span>
+          <input type="date" id="periodFrom" />
+          <span>tot</span>
+          <input type="date" id="periodTo" />
+        </div>
+      </div>
+
+      <div id="stats" class="stats"></div>
+      <div id="npsBreakdown"></div>
+      <div id="trendChart"></div>
+
+      <div class="section-head">
+        <h2>Recente reacties</h2>
+        <div class="actions-right">
+          <a class="btn secondary small" id="exportBtn" href="/api/responses?format=csv" download>Exporteer naar Excel</a>
+        </div>
+      </div>
+      <div id="recentList" class="response-list"></div>
+      <div id="recentPagination"></div>
+
+      <div class="section-head" style="margin-top:32px;">
+        <h2>Per contact</h2>
+        <select id="contactSelect" class="dashboard-select"></select>
+      </div>
+      <div id="selectedContactView"></div>
+
+      <div class="section-head" style="margin-top:32px;">
+        <h2>Per bedrijf</h2>
+        <select id="companySelect" class="dashboard-select"></select>
+      </div>
+      <div id="selectedCompanyView"></div>
+    </section>
+
+    <section class="tab-pane" id="tab-contacts">
+      <div class="section-head"><h2>Contacten</h2></div>
+
+      <form class="inline-form" id="addContactForm">
+        <input type="text" name="name" placeholder="Naam" />
+        <input type="text" name="company" placeholder="Bedrijf" />
+        <input type="email" name="email" placeholder="E-mail (verplicht)" required />
+        <input type="text" name="accountManager" placeholder="Account manager" />
+        <button type="submit" class="btn small">Toevoegen</button>
+      </form>
+
+      <label class="csv-drop" for="csvFile">
+        <input type="file" id="csvFile" accept=".csv,text/csv" />
+        <div><strong>CSV-bestand importeren</strong></div>
+        <div style="font-size:13px;margin-top:4px;">Kolommen: name, company, email, accountmanager (of NL-varianten)</div>
+      </label>
+      <div id="csvResult" class="meta" style="margin-bottom:12px;"></div>
+
+      <div class="contacts-filters">
+        <input type="search" id="contactSearch" placeholder="Zoek op naam, bedrijf of e-mail..." />
+        <select id="filterStatus">
+          <option value="">Alle statussen</option>
+          <option value="active">Alleen actieve</option>
+          <option value="inactive">Alleen inactieve</option>
+          <option value="optout">Alleen uitgeschreven</option>
+          <option value="bounced">Alleen bounced</option>
+        </select>
+        <select id="filterAM">
+          <option value="">Alle account managers</option>
+        </select>
+        <select id="filterCompany">
+          <option value="">Alle bedrijven</option>
+        </select>
+        <button class="btn secondary small" id="filterResetBtn">Reset filters</button>
+        <span class="spacer"></span>
+        <span class="results-meta" id="contactsResultsMeta"></span>
+      </div>
+
+      <div class="bulk-bar" id="bulkBar">
+        <span class="count" id="bulkCount">0 geselecteerd</span>
+        <span class="spacer"></span>
+        <button class="btn small" id="bulkSendBtn">Verstuur survey naar selectie</button>
+        <button class="btn secondary small" id="bulkClearBtn">Annuleer selectie</button>
+      </div>
+
+      <table class="data" id="contactsTable">
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="selectAll" /></th>
+            <th>Naam</th><th>Bedrijf</th><th>E-mail</th><th>Account manager</th><th>Interval</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="tab-pane" id="tab-rounds">
+      <div class="section-head">
+        <h2>Rondes</h2>
+        <button class="btn" id="startRoundBtn">Nieuwe ronde starten</button>
+      </div>
+      <p class="meta" style="margin-top:0;">Een ronde stuurt elk actief contact een unieke survey-link per e-mail. Klik op een ronde om de individuele links per contact te zien.</p>
+
+      <table class="data" id="roundsTable">
+        <thead>
+          <tr><th></th><th>Datum</th><th>Trigger</th><th>Verzonden</th><th>Reacties</th><th>Response rate</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="tab-pane" id="tab-audit">
+      <div class="section-head">
+        <h2>Audit log</h2>
+        <div class="actions-right">
+          <a class="btn secondary small" id="auditExportBtn" href="/api/audit?format=csv" download>Exporteer naar Excel</a>
+        </div>
+      </div>
+      <p class="meta" style="margin-top:0;">Alle admin-acties, automatische systeem-events en publieke acties (zoals opt-outs) worden hier gelogd. Maximaal 5000 entries — oudere worden automatisch opgeruimd.</p>
+
+      <div class="audit-filters">
+        <label>Gebruiker</label>
+        <select id="auditActorFilter">
+          <option value="">Alle</option>
+        </select>
+        <label>Actie</label>
+        <select id="auditActionFilter">
+          <option value="">Alle</option>
+        </select>
+        <label>Van</label>
+        <input type="date" id="auditFrom" />
+        <label>tot</label>
+        <input type="date" id="auditTo" />
+        <span class="spacer"></span>
+        <button class="btn secondary small" id="auditResetBtn">Reset filters</button>
+      </div>
+
+      <table class="data audit-table" id="auditTable">
+        <thead>
+          <tr><th>Tijdstip</th><th>Gebruiker</th><th>Actie</th><th>Target</th><th>Details</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="auditPagination"></div>
+    </section>
+
+    <section class="tab-pane" id="tab-settings">
+      <div class="section-head"><h2>Instellingen</h2></div>
+
+      <form class="settings-form" id="settingsForm">
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="autoEnabled" />
+            <span>Automatisch periodiek een nieuwe ronde versturen</span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="intervalPreset">Interval</label>
+          <select id="intervalPreset" style="max-width:260px;">
+            <option value="7">Wekelijks (7 dagen)</option>
+            <option value="14">Tweewekelijks (14 dagen)</option>
+            <option value="30">Maandelijks (30 dagen)</option>
+            <option value="90">Per kwartaal (90 dagen)</option>
+            <option value="180">Halfjaarlijks (180 dagen)</option>
+            <option value="365">Jaarlijks (365 dagen)</option>
+            <option value="custom">Aangepast aantal dagen…</option>
+          </select>
+          <input type="number" id="intervalDays" min="1" max="3650" step="1" style="max-width:160px;margin-top:8px;display:none;" />
+          <div class="meta" style="margin-top:6px;">
+            Dit is de standaard. Per contact kun je dit overschrijven op de Contacten-tab.
+          </div>
+        </div>
+        <div class="field">
+          <label>Laatst verzonden ronde</label>
+          <div id="lastRoundAt" class="meta" style="margin:0;">—</div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="reminderEnabled" />
+            <span>Stuur automatisch een herinnering naar contacten die niet hebben gereageerd</span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="reminderAfterDays">Herinnering versturen na (dagen)</label>
+          <input type="number" id="reminderAfterDays" min="1" max="60" step="1" style="max-width:160px;" />
+          <div class="meta" style="margin-top:6px;">Standaard 3 dagen na de uitnodiging. Reminders worden door de dagelijkse cron-taak verstuurd.</div>
+        </div>
+
+        <button type="submit" class="btn small">Opslaan</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function toast(msg, kind = '') {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + kind;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    async function copyToClipboard(text) {
+      // 1) Modern Clipboard API (HTTPS-context, modern browsers)
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) {
+          console.warn('Clipboard API faalde, fallback wordt geprobeerd:', e);
+        }
+      }
+      // 2) Fallback met execCommand — vereist zichtbare textarea, kort focus
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '0';
+        ta.style.width = '2em';
+        ta.style.height = '2em';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch {}
+        document.body.removeChild(ta);
+        if (ok) return true;
+      } catch (e) {
+        console.error('Fallback copy faalde:', e);
+      }
+      return false;
+    }
+
+    function showCopyModal(text, label) {
+      let overlay = document.getElementById('copyModalOverlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'copyModalOverlay';
+        overlay.className = 'copy-modal-overlay';
+        overlay.innerHTML = `
+          <div class="copy-modal">
+            <h3>Kopieer de link</h3>
+            <p>Automatisch kopiëren lukte niet. Selecteer de link hieronder en kopieer hem zelf met <strong>Cmd+C</strong> (Mac) of <strong>Ctrl+C</strong> (Windows).</p>
+            <textarea id="copyModalText" readonly></textarea>
+            <div class="actions">
+              <button class="btn secondary small" id="copyModalCloseBtn">Sluiten</button>
+              <button class="btn small" id="copyModalSelectBtn">Selecteer alles</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.classList.remove('show'); });
+        document.getElementById('copyModalCloseBtn').addEventListener('click', () => overlay.classList.remove('show'));
+        document.getElementById('copyModalSelectBtn').addEventListener('click', () => {
+          const ta = document.getElementById('copyModalText');
+          ta.focus(); ta.select();
+        });
+      }
+      const ta = document.getElementById('copyModalText');
+      ta.value = text;
+      overlay.classList.add('show');
+      setTimeout(() => { ta.focus(); ta.select(); }, 50);
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      $('#tab-' + b.dataset.tab).classList.add('active');
+    }));
+
+    function renderStats(s) {
+      const npsLabel = s.nps != null ? (s.nps > 0 ? `+${s.nps}` : String(s.nps)) : '—';
+      $('#stats').innerHTML = [
+        { label: 'Inzendingen', value: s.count },
+        { label: 'Cijfer (gem.)', value: s.avgOverall ?? '—', suffix: s.avgOverall != null ? ' / 10' : '' },
+        { label: 'NPS-score', value: npsLabel },
+      ].map(c => `
+        <div class="stat">
+          <div class="label">${escapeHtml(c.label)}</div>
+          <div class="value">${escapeHtml(String(c.value))}${c.suffix ? `<span style="font-size:16px;color:var(--text-muted);background:none;-webkit-text-fill-color:var(--text-muted);">${c.suffix}</span>` : ''}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderNpsBreakdown(s) {
+      if (!s.count) { $('#npsBreakdown').innerHTML = ''; return; }
+      const segs = [];
+      if (s.promotersPct > 0) segs.push(`<div class="nps-seg promoters" style="width:${s.promotersPct}%;" title="Promoters: ${s.promoters} (${s.promotersPct}%)">${s.promotersPct >= 8 ? s.promotersPct + '%' : ''}</div>`);
+      if (s.passivesPct > 0) segs.push(`<div class="nps-seg passives" style="width:${s.passivesPct}%;" title="Passives: ${s.passives} (${s.passivesPct}%)">${s.passivesPct >= 8 ? s.passivesPct + '%' : ''}</div>`);
+      if (s.detractorsPct > 0) segs.push(`<div class="nps-seg detractors" style="width:${s.detractorsPct}%;" title="Detractors: ${s.detractors} (${s.detractorsPct}%)">${s.detractorsPct >= 8 ? s.detractorsPct + '%' : ''}</div>`);
+      $('#npsBreakdown').innerHTML = `
+        <div class="nps-breakdown">
+          <div class="nps-title">
+            <span class="label">Verdeling NPS</span>
+            <span class="totals">${s.promoters} promoters · ${s.passives} passives · ${s.detractors} detractors</span>
+          </div>
+          <div class="nps-segments">${segs.join('')}</div>
+          <div class="nps-legend">
+            <span><span class="dot promoters"></span> Promoters (9-10)</span>
+            <span><span class="dot passives"></span> Passives (7-8)</span>
+            <span><span class="dot detractors"></span> Detractors (1-6)</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const monthNames = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+    function formatMonth(key) {
+      const [y, m] = key.split('-');
+      return `${monthNames[parseInt(m, 10) - 1]} '${y.slice(2)}`;
+    }
+
+    function renderTrendChart(responses) {
+      const counted = responses.filter(e => !e.excluded);
+      const byMonth = new Map();
+      for (const e of counted) {
+        const d = new Date(e.createdAt);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!byMonth.has(key)) byMonth.set(key, []);
+        byMonth.get(key).push(Number((e.answers || {}).q1_overall) || 0);
+      }
+      const data = Array.from(byMonth.entries())
+        .map(([month, scores]) => ({
+          month, count: scores.length,
+          avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+        }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      const container = $('#trendChart');
+      if (data.length === 0) { container.innerHTML = ''; return; }
+      if (data.length === 1) {
+        container.innerHTML = `
+          <div class="trend-section">
+            <h3>Cijfer over tijd</h3>
+            <div class="trend-empty">Nog te weinig data om een trend te tonen — minimaal 2 maanden met reacties nodig. Huidige periode: <strong>${formatMonth(data[0].month)}</strong> met gemiddeld <strong>${data[0].avg.toFixed(1)} / 10</strong>.</div>
+          </div>`;
+        return;
+      }
+
+      const W = 800, H = 220;
+      const pad = { top: 24, right: 16, bottom: 32, left: 36 };
+      const chartW = W - pad.left - pad.right;
+      const chartH = H - pad.top - pad.bottom;
+      const xPos = (i) => pad.left + (i / (data.length - 1)) * chartW;
+      const yPos = (v) => pad.top + chartH - (v / 10) * chartH;
+      const points = data.map((d, i) => ({ x: xPos(i), y: yPos(d.avg), ...d }));
+
+      const yLines = [0, 5, 10].map(v => {
+        const y = yPos(v);
+        return `<line x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" stroke="#e5e7eb" stroke-width="1" />
+                <text x="${pad.left - 8}" y="${y + 4}" fill="#64748b" font-size="11" text-anchor="end">${v}</text>`;
+      }).join('');
+
+      const xLabels = points.map(p =>
+        `<text x="${p.x.toFixed(1)}" y="${H - pad.bottom + 16}" fill="#64748b" font-size="11" text-anchor="middle">${formatMonth(p.month)}</text>`
+      ).join('');
+
+      const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+      const area = `M ${points[0].x.toFixed(1)} ${(pad.top + chartH).toFixed(1)} ${points.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')} L ${points[points.length - 1].x.toFixed(1)} ${(pad.top + chartH).toFixed(1)} Z`;
+
+      const dots = points.map(p =>
+        `<g>
+          <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="#7c5cff" stroke="white" stroke-width="2">
+            <title>${formatMonth(p.month)}: ${p.avg.toFixed(1)}/10 (${p.count} reactie${p.count === 1 ? '' : 's'})</title>
+          </circle>
+          <text x="${p.x.toFixed(1)}" y="${(p.y - 12).toFixed(1)}" fill="#0f172a" font-size="12" font-weight="600" text-anchor="middle">${p.avg.toFixed(1)}</text>
+        </g>`
+      ).join('');
+
+      container.innerHTML = `
+        <div class="trend-section">
+          <h3>Cijfer over tijd</h3>
+          <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="trend-svg">
+            <defs>
+              <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7c5cff" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            ${yLines}
+            <path d="${area}" fill="url(#trendGrad)" />
+            <path d="${path}" fill="none" stroke="#7c5cff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            ${dots}
+            ${xLabels}
+          </svg>
+        </div>`;
+    }
+
+    function renderResponseCard(e) {
+      const a = e.answers || {};
+      const who = e.contact
+        ? [e.contact.name, e.contact.company].filter(Boolean).join(' — ')
+        : ([a.name, a.company].filter(Boolean).join(' — ') || 'Anoniem');
+      const when = new Date(e.createdAt).toLocaleString('nl-NL');
+      const rows = [
+        a.q1_overall != null ? `<dt>Cijfer</dt><dd>${escapeHtml(String(a.q1_overall))}</dd>` : '',
+        a.q_low_reason ? `<dt>Reden lage score</dt><dd>${escapeHtml(a.q_low_reason)}</dd>` : '',
+        a.q6_likes ? `<dt>Waardeert</dt><dd>${escapeHtml(a.q6_likes)}</dd>` : '',
+        a.q7_improve ? `<dt>Verbeteren</dt><dd>${escapeHtml(a.q7_improve)}</dd>` : '',
+        a.q4_ai_opportunities ? `<dt>AI-kansen</dt><dd>${escapeHtml(a.q4_ai_opportunities)}</dd>` : '',
+      ].join('');
+      const excludedClass = e.excluded ? ' excluded' : '';
+      const badge = e.excluded ? '<span class="excluded-badge">Uitgesloten</span>' : '';
+      const excludeLabel = e.excluded ? 'Insluiten' : 'Uitsluiten';
+      const excludeTitle = e.excluded ? 'Weer meetellen in gemiddelde' : 'Niet meetellen in gemiddelde';
+      return `<div class="response${excludedClass}">
+        <div class="response-actions">
+          <button class="exclude-btn" data-exclude="${escapeHtml(e.id)}" data-current="${e.excluded ? '1' : '0'}" title="${excludeTitle}">${excludeLabel}</button>
+          <button class="delete-btn" data-delete="${escapeHtml(e.id)}" title="Reactie definitief verwijderen" aria-label="Reactie definitief verwijderen">×</button>
+        </div>
+        <div class="head"><span class="who">${escapeHtml(who)}${badge}</span><span class="when">${escapeHtml(when)}</span></div>
+        <dl>${rows}</dl>
+      </div>`;
+    }
+
+    function bindResponseCardActions(rootSelector) {
+      const root = document.querySelector(rootSelector);
+      if (!root) return;
+      root.querySelectorAll('button[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.delete;
+          if (!confirm('Weet je zeker dat je deze reactie definitief wilt verwijderen? Voor fraude-administratie kun je beter "Uitsluiten" gebruiken.')) return;
+          const r = await fetch('/api/responses?id=' + encodeURIComponent(id), { method: 'DELETE', credentials: 'same-origin' });
+          if (r.ok) { toast('Reactie verwijderd', 'success'); loadOverview(); loadRounds(); }
+          else { const j = await r.json().catch(() => ({})); toast(j.error || 'Verwijderen mislukt', 'error'); }
+        });
+      });
+      root.querySelectorAll('button[data-exclude]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.exclude;
+          const isCurrentlyExcluded = btn.dataset.current === '1';
+          const r = await fetch('/api/responses?id=' + encodeURIComponent(id), {
+            method: 'PATCH', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ excluded: !isCurrentlyExcluded }),
+          });
+          if (r.ok) {
+            toast(isCurrentlyExcluded ? 'Reactie weer ingesloten' : 'Reactie uitgesloten van gemiddelde', 'success');
+            loadOverview();
+          } else {
+            const j = await r.json().catch(() => ({}));
+            toast(j.error || 'Bijwerken mislukt', 'error');
+          }
+        });
+      });
+    }
+
+    function renderPaginationHtml(page, totalPages, totalItems, prefix) {
+      return `<div class="pagination">
+        <button class="btn secondary small" ${page === 1 ? 'disabled' : ''} data-${prefix}-prev>‹ Vorige</button>
+        <span class="pages">Pagina ${page} van ${totalPages} <span class="meta">(${totalItems} ${totalItems === 1 ? 'reactie' : 'reacties'} totaal)</span></span>
+        <button class="btn secondary small" ${page === totalPages ? 'disabled' : ''} data-${prefix}-next>Volgende ›</button>
+      </div>`;
+    }
+
+    const RECENT_PER_PAGE = 5;
+    const COMPANY_RESPONSES_PER_PAGE = 5;
+    let recentPage = 1;
+    let companyResponsesPage = 1;
+
+    function renderRecentList(items) {
+      if (!items.length) {
+        $('#recentList').innerHTML = '<div class="empty">Nog geen inzendingen.</div>';
+        $('#recentPagination').innerHTML = '';
+        return;
+      }
+      const totalPages = Math.max(1, Math.ceil(items.length / RECENT_PER_PAGE));
+      recentPage = Math.min(Math.max(1, recentPage), totalPages);
+      const start = (recentPage - 1) * RECENT_PER_PAGE;
+      const pageItems = items.slice(start, start + RECENT_PER_PAGE);
+
+      $('#recentList').innerHTML = pageItems.map(renderResponseCard).join('');
+      bindResponseCardActions('#recentList');
+
+      if (totalPages > 1) {
+        $('#recentPagination').innerHTML = renderPaginationHtml(recentPage, totalPages, items.length, 'recent');
+        const prev = document.querySelector('[data-recent-prev]');
+        const next = document.querySelector('[data-recent-next]');
+        if (prev) prev.addEventListener('click', () => { recentPage--; renderRecentList(items); });
+        if (next) next.addEventListener('click', () => { recentPage++; renderRecentList(items); });
+      } else {
+        $('#recentPagination').innerHTML = '';
+      }
+    }
+
+    function renderTimelineItem(e) {
+      const when = new Date(e.createdAt).toLocaleDateString('nl-NL');
+      const a = e.answers || {};
+      const score = a.q1_overall ?? '—';
+      const exClass = e.excluded ? ' excluded' : '';
+      const exBadge = e.excluded ? ' <span class="excluded-badge">Uitgesloten</span>' : '';
+      const answerRows = [
+        a.q_low_reason ? `<dt>Reden lage score</dt><dd>${escapeHtml(a.q_low_reason)}</dd>` : '',
+        a.q6_likes ? `<dt>Waardeert</dt><dd>${escapeHtml(a.q6_likes)}</dd>` : '',
+        a.q7_improve ? `<dt>Verbeteren</dt><dd>${escapeHtml(a.q7_improve)}</dd>` : '',
+        a.q4_ai_opportunities ? `<dt>AI-kansen</dt><dd>${escapeHtml(a.q4_ai_opportunities)}</dd>` : '',
+      ].filter(Boolean).join('');
+      const answersHtml = answerRows
+        ? `<dl class="timeline-answers">${answerRows}</dl>`
+        : '<div class="timeline-empty">Geen aanvullende toelichting</div>';
+      return `<div class="timeline-item${exClass}">
+        <div class="timeline-header">
+          <span class="when">${escapeHtml(when)}</span>
+          <span class="score">${escapeHtml(String(score))}${score !== '—' ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400;"> /10</span>' : ''}</span>
+          ${exBadge}
+        </div>
+        ${answersHtml}
+      </div>`;
+    }
+
+    function computePerContactStats(responses) {
+      const map = new Map();
+      for (const r of responses) {
+        if (!r.contactId || !r.contact) continue;
+        if (!map.has(r.contactId)) map.set(r.contactId, { contact: r.contact, responses: [] });
+        map.get(r.contactId).responses.push(r);
+      }
+      const result = [];
+      map.forEach(entry => {
+        const counted = entry.responses.filter(e => !e.excluded);
+        const count = counted.length;
+        const avg = count > 0 ? counted.reduce((s, e) => s + (Number((e.answers || {}).q1_overall) || 0), 0) / count : 0;
+        result.push({ contact: entry.contact, responses: entry.responses, count, avg });
+      });
+      return result;
+    }
+
+    function computePerCompanyStats(responses) {
+      const map = new Map();
+      for (const r of responses) {
+        const company = ((r.contact && r.contact.company) || (r.answers && r.answers.company) || '').trim() || 'Onbekend';
+        if (!map.has(company)) map.set(company, { company, responses: [], contactIds: new Set() });
+        map.get(company).responses.push(r);
+        if (r.contactId) map.get(company).contactIds.add(r.contactId);
+      }
+      const result = [];
+      map.forEach(entry => {
+        const counted = entry.responses.filter(e => !e.excluded);
+        const count = counted.length;
+        const avg = count > 0 ? counted.reduce((s, e) => s + (Number((e.answers || {}).q1_overall) || 0), 0) / count : 0;
+        result.push({
+          company: entry.company,
+          responses: entry.responses,
+          count, avg,
+          contactCount: entry.contactIds.size,
+        });
+      });
+      return result.filter(e => e.count > 0);
+    }
+
+    function renderContactSelector(stats) {
+      const sel = $('#contactSelect');
+      const previousValue = sel.value;
+      if (!stats.length) {
+        sel.innerHTML = '<option value="">Geen contacten met reacties in deze periode</option>';
+        sel.disabled = true;
+        return;
+      }
+      sel.disabled = false;
+      const sorted = [...stats].sort((a, b) =>
+        (b.count - a.count) || (b.avg - a.avg) ||
+        (a.contact.name || '').localeCompare(b.contact.name || '')
+      );
+      const options = sorted.map(s => {
+        const who = [s.contact.name, s.contact.company].filter(Boolean).join(' — ') || s.contact.email;
+        return `<option value="${escapeHtml(s.contact.id)}">${escapeHtml(who)} — gem. ${s.avg.toFixed(1)} (${s.count} reactie${s.count === 1 ? '' : 's'})</option>`;
+      }).join('');
+      sel.innerHTML = '<option value="">— Selecteer een contact —</option>' + options;
+      if (previousValue && sorted.find(s => s.contact.id === previousValue)) {
+        sel.value = previousValue;
+      }
+    }
+
+    function renderSelectedContact(contactId, contactStats) {
+      const view = $('#selectedContactView');
+      if (!contactId) { view.innerHTML = ''; return; }
+      const entry = contactStats.find(s => s.contact.id === contactId);
+      if (!entry) { view.innerHTML = '<p class="meta">Geen data voor dit contact in de geselecteerde periode.</p>'; return; }
+      const who = [entry.contact.name, entry.contact.company].filter(Boolean).join(' — ') || entry.contact.email;
+      const am = entry.contact.accountManager || '';
+      const timeline = [...entry.responses]
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .map(renderTimelineItem)
+        .join('');
+      view.innerHTML = `
+        <div class="selected-summary">
+          <h3>${escapeHtml(who)}</h3>
+          <div class="summary-stats">
+            <span><strong>Gemiddeld cijfer:</strong> ${entry.avg.toFixed(1)} / 10</span>
+            <span><strong>Aantal reacties:</strong> ${entry.count}</span>
+            ${am ? `<span><strong>Account manager:</strong> ${escapeHtml(am)}</span>` : ''}
+          </div>
+        </div>
+        <div class="timeline">${timeline}</div>
+      `;
+    }
+
+    function renderCompanySelector(stats) {
+      const sel = $('#companySelect');
+      const previousValue = sel.value;
+      if (!stats.length) {
+        sel.innerHTML = '<option value="">Geen bedrijven met reacties in deze periode</option>';
+        sel.disabled = true;
+        return;
+      }
+      sel.disabled = false;
+      const sorted = [...stats].sort((a, b) =>
+        (b.count - a.count) || a.company.localeCompare(b.company)
+      );
+      const options = sorted.map(s =>
+        `<option value="${escapeHtml(s.company)}">${escapeHtml(s.company)} — gem. ${s.avg.toFixed(1)} (${s.count} reactie${s.count === 1 ? '' : 's'}, ${s.contactCount} ${s.contactCount === 1 ? 'contact' : 'contacten'})</option>`
+      ).join('');
+      sel.innerHTML = '<option value="">— Selecteer een bedrijf —</option>' + options;
+      if (previousValue && sorted.find(s => s.company === previousValue)) {
+        sel.value = previousValue;
+      }
+    }
+
+    function renderSelectedCompany(company, companyStats) {
+      const view = $('#selectedCompanyView');
+      if (!company) { view.innerHTML = ''; return; }
+      const entry = companyStats.find(s => s.company === company);
+      if (!entry) { view.innerHTML = '<p class="meta">Geen data voor dit bedrijf in de geselecteerde periode.</p>'; return; }
+
+      const byContact = new Map();
+      for (const r of entry.responses) {
+        const cid = r.contactId || ('anon-' + ((r.answers && r.answers.email) || r.id));
+        if (!byContact.has(cid)) byContact.set(cid, { contact: r.contact || null, responses: [] });
+        byContact.get(cid).responses.push(r);
+      }
+      const contactRows = Array.from(byContact.values())
+        .map(bc => {
+          const counted = bc.responses.filter(e => !e.excluded);
+          const cAvg = counted.length > 0
+            ? counted.reduce((s, e) => s + (Number((e.answers || {}).q1_overall) || 0), 0) / counted.length
+            : null;
+          const name = bc.contact ? (bc.contact.name || bc.contact.email) : 'Anoniem';
+          const am = bc.contact ? (bc.contact.accountManager || '') : '';
+          return { name, am, count: counted.length, avg: cAvg };
+        })
+        .sort((a, b) => (b.count - a.count) || (a.name || '').localeCompare(b.name || ''))
+        .map(r => `<tr>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${r.am ? escapeHtml(r.am) : '—'}</td>
+          <td>${r.count}</td>
+          <td>${r.avg != null ? r.avg.toFixed(1) + ' / 10' : '—'}</td>
+        </tr>`).join('');
+
+      const sortedResponses = [...entry.responses].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      const totalPages = Math.max(1, Math.ceil(sortedResponses.length / COMPANY_RESPONSES_PER_PAGE));
+      companyResponsesPage = Math.min(Math.max(1, companyResponsesPage), totalPages);
+      const start = (companyResponsesPage - 1) * COMPANY_RESPONSES_PER_PAGE;
+      const pageItems = sortedResponses.slice(start, start + COMPANY_RESPONSES_PER_PAGE);
+
+      const paginationHtml = totalPages > 1
+        ? renderPaginationHtml(companyResponsesPage, totalPages, sortedResponses.length, 'company')
+        : '';
+
+      view.innerHTML = `
+        <div class="selected-summary">
+          <h3>${escapeHtml(company)}</h3>
+          <div class="summary-stats">
+            <span><strong>Gemiddeld cijfer:</strong> ${entry.avg.toFixed(1)} / 10</span>
+            <span><strong>Aantal reacties:</strong> ${entry.count}</span>
+            <span><strong>Aantal contacten:</strong> ${entry.contactCount}</span>
+          </div>
+        </div>
+        <h4 class="subheading">Per contact binnen ${escapeHtml(company)}</h4>
+        <table class="data company-contacts-table">
+          <thead><tr><th>Contact</th><th>Account manager</th><th>Reacties</th><th>Gemiddeld</th></tr></thead>
+          <tbody>${contactRows}</tbody>
+        </table>
+        <h4 class="subheading">Reacties</h4>
+        <div class="response-list">${pageItems.map(renderResponseCard).join('')}</div>
+        ${paginationHtml}
+      `;
+
+      bindResponseCardActions('#selectedCompanyView');
+      if (totalPages > 1) {
+        const prev = document.querySelector('[data-company-prev]');
+        const next = document.querySelector('[data-company-next]');
+        if (prev) prev.addEventListener('click', () => { companyResponsesPage--; renderSelectedCompany(company, companyStats); });
+        if (next) next.addEventListener('click', () => { companyResponsesPage++; renderSelectedCompany(company, companyStats); });
+      }
+    }
+
+    $('#contactSelect').addEventListener('change', () => {
+      const stats = computePerContactStats(currentFilteredResponses);
+      renderSelectedContact($('#contactSelect').value, stats);
+    });
+    $('#companySelect').addEventListener('change', () => {
+      companyResponsesPage = 1;
+      const stats = computePerCompanyStats(currentFilteredResponses);
+      renderSelectedCompany($('#companySelect').value, stats);
+    });
+
+    let allResponsesCache = [];
+    let currentFilteredResponses = [];
+
+    function computeFilteredStats(responses) {
+      const counted = responses.filter(e => !e.excluded);
+      const n = counted.length;
+      if (n === 0) {
+        return {
+          count: 0, avgOverall: null, nps: null,
+          promoters: 0, passives: 0, detractors: 0,
+          promotersPct: 0, passivesPct: 0, detractorsPct: 0,
+        };
+      }
+      let sum = 0, promoters = 0, passives = 0, detractors = 0;
+      for (const e of counted) {
+        const score = Number((e.answers || {}).q1_overall) || 0;
+        sum += score;
+        if (score >= 9) promoters++;
+        else if (score >= 7) passives++;
+        else detractors++;
+      }
+      const avg = Math.round((sum / n) * 100) / 100;
+      const nps = Math.round(((promoters - detractors) / n) * 100);
+      return {
+        count: n, avgOverall: avg, nps,
+        promoters, passives, detractors,
+        promotersPct: Math.round((promoters / n) * 100),
+        passivesPct: Math.round((passives / n) * 100),
+        detractorsPct: Math.round((detractors / n) * 100),
+      };
+    }
+
+    function setPeriodFromPreset(preset) {
+      if (preset === 'all') {
+        $('#periodFrom').value = '';
+        $('#periodTo').value = '';
+        return;
+      }
+      const days = parseInt(preset, 10);
+      const to = new Date();
+      const from = new Date();
+      from.setDate(from.getDate() - days);
+      $('#periodFrom').value = from.toISOString().slice(0, 10);
+      $('#periodTo').value = to.toISOString().slice(0, 10);
+    }
+
+    function applyPeriodFilter() {
+      const fromVal = $('#periodFrom').value;
+      const toVal = $('#periodTo').value;
+      const from = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+      const to = toVal ? new Date(toVal + 'T23:59:59.999') : null;
+
+      currentFilteredResponses = allResponsesCache.filter(e => {
+        const t = new Date(e.createdAt);
+        if (from && t < from) return false;
+        if (to && t > to) return false;
+        return true;
+      });
+
+      recentPage = 1;
+      companyResponsesPage = 1;
+
+      const stats = computeFilteredStats(currentFilteredResponses);
+      renderStats(stats);
+      renderNpsBreakdown(stats);
+      renderTrendChart(currentFilteredResponses);
+      renderRecentList(currentFilteredResponses);
+
+      const contactStats = computePerContactStats(currentFilteredResponses);
+      renderContactSelector(contactStats);
+      renderSelectedContact($('#contactSelect').value, contactStats);
+
+      const companyStats = computePerCompanyStats(currentFilteredResponses);
+      renderCompanySelector(companyStats);
+      renderSelectedCompany($('#companySelect').value, companyStats);
+    }
+
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setPeriodFromPreset(btn.dataset.period);
+        applyPeriodFilter();
+      });
+    });
+    ['#periodFrom', '#periodTo'].forEach(sel => {
+      $(sel).addEventListener('change', () => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        applyPeriodFilter();
+      });
+    });
+
+    async function loadOverview() {
+      const res = await fetch('/api/responses', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      allResponsesCache = data.responses || [];
+      applyPeriodFilter();
+    }
+
+    let selectedContactIds = new Set();
+    let allContactsCache = [];
+
+    function updateBulkBar() {
+      const bar = $('#bulkBar');
+      const n = selectedContactIds.size;
+      $('#bulkCount').textContent = `${n} ${n === 1 ? 'contact' : 'contacten'} geselecteerd`;
+      bar.classList.toggle('show', n > 0);
+      const allBoxes = document.querySelectorAll('#contactsTable tbody input[type="checkbox"][data-select]');
+      const allTotal = allBoxes.length;
+      const allChecked = Array.from(allBoxes).filter(b => b.checked).length;
+      const selectAll = $('#selectAll');
+      if (selectAll) {
+        selectAll.checked = allTotal > 0 && allChecked === allTotal;
+        selectAll.indeterminate = allChecked > 0 && allChecked < allTotal;
+      }
+      document.querySelectorAll('#contactsTable tbody tr').forEach(tr => {
+        const cb = tr.querySelector('input[type="checkbox"][data-select]');
+        tr.classList.toggle('selected', cb && cb.checked);
+      });
+    }
+
+    function populateContactFilters(contacts) {
+      const ams = Array.from(new Set(contacts.map(c => (c.accountManager || '').trim()).filter(Boolean))).sort();
+      const companies = Array.from(new Set(contacts.map(c => (c.company || '').trim()).filter(Boolean))).sort();
+      const amSelect = $('#filterAM');
+      const companySelect = $('#filterCompany');
+      const prevAM = amSelect.value;
+      const prevCompany = companySelect.value;
+      amSelect.innerHTML = '<option value="">Alle account managers</option>' +
+        ams.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+      companySelect.innerHTML = '<option value="">Alle bedrijven</option>' +
+        companies.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      if (ams.includes(prevAM)) amSelect.value = prevAM;
+      if (companies.includes(prevCompany)) companySelect.value = prevCompany;
+    }
+
+    function filterContacts(contacts) {
+      const search = ($('#contactSearch').value || '').toLowerCase().trim();
+      const status = $('#filterStatus').value;
+      const am = $('#filterAM').value;
+      const company = $('#filterCompany').value;
+      return contacts.filter(c => {
+        if (search) {
+          const hay = `${c.name || ''} ${c.company || ''} ${c.email || ''} ${c.accountManager || ''}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        if (status === 'active' && (!c.active || c.optOut || c.bounced)) return false;
+        if (status === 'inactive' && (c.active || c.optOut || c.bounced)) return false;
+        if (status === 'optout' && !c.optOut) return false;
+        if (status === 'bounced' && !c.bounced) return false;
+        if (am && (c.accountManager || '') !== am) return false;
+        if (company && (c.company || '') !== company) return false;
+        return true;
+      });
+    }
+
+    const INTERVAL_PRESETS = [
+      { value: '', label: 'Standaard' },
+      { value: '7', label: 'Wekelijks (7d)' },
+      { value: '14', label: 'Tweewekelijks (14d)' },
+      { value: '30', label: 'Maandelijks (30d)' },
+      { value: '90', label: 'Per kwartaal (90d)' },
+      { value: '180', label: 'Halfjaarlijks (180d)' },
+      { value: '365', label: 'Jaarlijks (365d)' },
+    ];
+
+    function intervalOptions(currentVal) {
+      const cv = currentVal == null ? '' : String(currentVal);
+      const presets = INTERVAL_PRESETS.map(p =>
+        `<option value="${p.value}"${p.value === cv ? ' selected' : ''}>${p.label}</option>`
+      ).join('');
+      // Als de huidige waarde geen preset is, voeg 'm toch toe als optie
+      const isPreset = INTERVAL_PRESETS.some(p => p.value === cv);
+      if (!isPreset && cv) {
+        return presets + `<option value="${cv}" selected>${escapeHtml(cv)} dagen (aangepast)</option>`;
+      }
+      return presets;
+    }
+
+    function renderContactsTable(contacts) {
+      const tbody = $('#contactsTable tbody');
+      const totalCount = allContactsCache.length;
+      if (!contacts.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">${totalCount === 0 ? 'Nog geen contacten.' : 'Geen contacten voor deze filters.'}</td></tr>`;
+        $('#contactsResultsMeta').textContent = totalCount > 0 ? `0 van ${totalCount}` : '';
+        return;
+      }
+      $('#contactsResultsMeta').textContent = `${contacts.length} van ${totalCount}`;
+      tbody.innerHTML = contacts.map(c => {
+        const optedOut = !!c.optOut;
+        const bounced = !!c.bounced;
+        const selectable = c.active && !optedOut && !bounced;
+        const statusClass = bounced ? 'bounced' : (optedOut ? 'optout' : (c.active ? 'active' : 'inactive'));
+        const statusLabel = bounced ? 'bounced' : (optedOut ? 'uitgeschreven' : (c.active ? 'actief' : 'inactief'));
+        const blockedTitle = bounced ? 'E-mail bouncet — adres lijkt onbereikbaar'
+                          : (optedOut ? 'Uitgeschreven contact ontvangt geen mails meer'
+                          : 'Inactief contact');
+        return `
+        <tr>
+          <td class="col-check">
+            <input type="checkbox" data-select="${escapeHtml(c.id)}" ${selectedContactIds.has(c.id) ? 'checked' : ''} ${selectable ? '' : 'disabled title="' + blockedTitle + '"'} />
+          </td>
+          <td>${escapeHtml(c.name || '—')}</td>
+          <td>${escapeHtml(c.company || '—')}</td>
+          <td>${escapeHtml(c.email)}</td>
+          <td><input type="text" class="am-edit" data-am-edit="${escapeHtml(c.id)}" value="${escapeHtml(c.accountManager || '')}" placeholder="—" /></td>
+          <td><select class="interval-edit ${c.intervalDaysOverride ? 'overridden' : ''}" data-interval-edit="${escapeHtml(c.id)}">${intervalOptions(c.intervalDaysOverride)}</select></td>
+          <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+          <td>
+            <div class="row-actions">
+              ${bounced
+                ? '<span class="meta" style="font-size:13px;">Adres onbereikbaar</span>'
+                : optedOut
+                ? '<span class="meta" style="font-size:13px;">Uitgeschreven</span>'
+                : `<button class="btn secondary small" data-genlink="${escapeHtml(c.id)}" ${c.active ? '' : 'disabled'}>Kopieer link</button>
+                   <button class="btn secondary small" data-toggle="${c.id}" data-active="${c.active ? '1' : '0'}">
+                     ${c.active ? 'Deactiveren' : 'Activeren'}
+                   </button>`
+              }
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('input[type="checkbox"][data-select]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const id = cb.dataset.select;
+          if (cb.checked) selectedContactIds.add(id);
+          else selectedContactIds.delete(id);
+          updateBulkBar();
+        });
+      });
+
+      tbody.querySelectorAll('select.interval-edit').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const id = sel.dataset.intervalEdit;
+          const value = sel.value === '' ? null : Number(sel.value);
+          const r = await fetch('/api/contacts?id=' + encodeURIComponent(id), {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ intervalDaysOverride: value }),
+          });
+          if (r.ok) {
+            sel.classList.toggle('overridden', value != null);
+            toast('Interval bijgewerkt', 'success');
+          } else {
+            toast('Bijwerken mislukt', 'error');
+          }
+        });
+      });
+
+      tbody.querySelectorAll('input.am-edit').forEach(inp => {
+        let original = inp.value;
+        inp.addEventListener('blur', async () => {
+          if (inp.value === original) return;
+          const id = inp.dataset.amEdit;
+          const r = await fetch('/api/contacts?id=' + encodeURIComponent(id), {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountManager: inp.value }),
+          });
+          if (r.ok) { original = inp.value; toast('Account manager bijgewerkt', 'success'); }
+          else { inp.value = original; toast('Bijwerken mislukt', 'error'); }
+        });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+          if (e.key === 'Escape') { inp.value = original; inp.blur(); }
+        });
+      });
+
+      tbody.querySelectorAll('button[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.toggle;
+          const wasActive = btn.dataset.active === '1';
+          const r = await fetch('/api/contacts?id=' + encodeURIComponent(id), {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: !wasActive }),
+          });
+          if (r.ok) { toast('Bijgewerkt', 'success'); loadContacts(); }
+          else toast('Kon niet bijwerken', 'error');
+        });
+      });
+
+      tbody.querySelectorAll('button[data-genlink]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.genlink;
+          const original = btn.textContent;
+          btn.disabled = true; btn.textContent = 'Bezig…';
+          try {
+            const r = await fetch('/api/rounds', {
+              method: 'POST', credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contactIds: [id], sendEmail: false }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.invitations || !j.invitations.length) {
+              toast(j.error || 'Kon link niet genereren', 'error');
+              return;
+            }
+            const link = j.invitations[0].link;
+            const name = j.invitations[0].contactName || j.invitations[0].contactEmail || 'contact';
+            const ok = await copyToClipboard(link);
+            if (ok) {
+              toast(`Link voor ${name} gekopieerd`, 'success');
+            } else {
+              showCopyModal(link, name);
+            }
+            loadRounds();
+          } finally {
+            btn.disabled = false; btn.textContent = original;
+          }
+        });
+      });
+
+      updateBulkBar();
+    }
+
+    async function loadContacts() {
+      const res = await fetch('/api/contacts', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      allContactsCache = data.contacts || [];
+      populateContactFilters(allContactsCache);
+      const filtered = filterContacts(allContactsCache);
+      renderContactsTable(filtered);
+      if (!allContactsCache.length) {
+        selectedContactIds.clear();
+        updateBulkBar();
+      }
+    }
+
+    // Filter event handlers
+    ['#contactSearch', '#filterStatus', '#filterAM', '#filterCompany'].forEach(sel => {
+      const el = $(sel);
+      const evt = sel === '#contactSearch' ? 'input' : 'change';
+      el.addEventListener(evt, () => {
+        const filtered = filterContacts(allContactsCache);
+        renderContactsTable(filtered);
+      });
+    });
+    $('#filterResetBtn').addEventListener('click', () => {
+      $('#contactSearch').value = '';
+      $('#filterStatus').value = '';
+      $('#filterAM').value = '';
+      $('#filterCompany').value = '';
+      renderContactsTable(filterContacts(allContactsCache));
+    });
+
+    $('#selectAll').addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      document.querySelectorAll('#contactsTable tbody input[type="checkbox"][data-select]').forEach(cb => {
+        if (cb.disabled) return;
+        cb.checked = checked;
+        const id = cb.dataset.select;
+        if (checked) selectedContactIds.add(id);
+        else selectedContactIds.delete(id);
+      });
+      updateBulkBar();
+    });
+
+    $('#bulkClearBtn').addEventListener('click', () => {
+      selectedContactIds.clear();
+      document.querySelectorAll('#contactsTable tbody input[type="checkbox"][data-select]').forEach(cb => cb.checked = false);
+      updateBulkBar();
+    });
+
+    $('#bulkSendBtn').addEventListener('click', async () => {
+      const ids = Array.from(selectedContactIds);
+      if (!ids.length) return;
+      if (!confirm(`Survey versturen naar ${ids.length} ${ids.length === 1 ? 'contact' : 'contacten'}?`)) return;
+      $('#bulkSendBtn').disabled = true;
+      $('#bulkSendBtn').textContent = 'Versturen…';
+      try {
+        const r = await fetch('/api/rounds', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contactIds: ids, sendEmail: true }),
+        });
+        const j = await r.json();
+        if (r.ok) {
+          toast(`Survey verstuurd — ${j.sent} verzonden, ${j.failed} mislukt`, j.failed ? 'error' : 'success');
+          selectedContactIds.clear();
+          loadContacts();
+          loadRounds();
+        } else {
+          toast(j.error || 'Versturen mislukt', 'error');
+        }
+      } finally {
+        $('#bulkSendBtn').disabled = false;
+        $('#bulkSendBtn').textContent = 'Verstuur survey naar selectie';
+      }
+    });
+
+    $('#addContactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = Object.fromEntries(fd.entries());
+      const r = await fetch('/api/contacts', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (r.ok) { toast('Contact toegevoegd', 'success'); e.target.reset(); loadContacts(); }
+      else toast(j.error || 'Kan contact niet toevoegen', 'error');
+    });
+
+    $('#csvFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const r = await fetch('/api/contacts/import', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'text/csv' },
+        body: text,
+      });
+      const j = await r.json();
+      if (r.ok) {
+        $('#csvResult').textContent = `Import: ${j.created} toegevoegd, ${j.skipped} overgeslagen (duplicaten of geen e-mail).`;
+        toast('Import voltooid', 'success');
+        loadContacts();
+      } else {
+        toast(j.error || 'Import mislukt', 'error');
+      }
+      e.target.value = '';
+    });
+
+    function renderInvitationItem(inv) {
+      const who = [inv.contactName, inv.contactCompany].filter(Boolean).join(' — ') || inv.contactEmail || 'Onbekend';
+      const status = inv.respondedAt ? 'responded' : (inv.sentAt ? 'sent' : 'pending');
+      const statusLabel = inv.respondedAt ? 'beantwoord' : (inv.sentAt ? 'verstuurd' : 'open');
+      return `<div class="invitation-item">
+        <span class="who">
+          ${escapeHtml(who)}
+          ${inv.contactEmail ? `<span class="email">${escapeHtml(inv.contactEmail)}</span>` : ''}
+        </span>
+        <span class="status-pill ${status}">${statusLabel}</span>
+        <button class="btn secondary small" data-copy-link="${escapeHtml(inv.link)}">Kopieer link</button>
+      </div>`;
+    }
+
+    async function loadRounds() {
+      const res = await fetch('/api/rounds', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      const tbody = $('#roundsTable tbody');
+      if (!data.rounds.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Nog geen rondes verstuurd.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.rounds.map((r, idx) => {
+        const invitationsHtml = r.invitations && r.invitations.length
+          ? `<div class="invitations-list">${r.invitations.map(renderInvitationItem).join('')}</div>`
+          : '<div class="meta">Geen uitnodigingen voor deze ronde.</div>';
+        return `
+          <tr class="round-row" data-round-idx="${idx}">
+            <td><span class="chevron">›</span></td>
+            <td>${escapeHtml(new Date(r.createdAt).toLocaleString('nl-NL'))}</td>
+            <td>${escapeHtml(r.triggeredBy || '—')}</td>
+            <td>${r.sent} / ${r.total}</td>
+            <td>${r.responded}</td>
+            <td>${r.responseRate}%</td>
+          </tr>
+          <tr class="round-detail-row" data-round-detail="${idx}" style="display:none;">
+            <td colspan="6">
+              <div class="round-detail-inner">${invitationsHtml}</div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('tr.round-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const idx = row.dataset.roundIdx;
+          const detail = tbody.querySelector('tr.round-detail-row[data-round-detail="' + idx + '"]');
+          const isOpen = row.classList.toggle('open');
+          if (detail) detail.style.display = isOpen ? '' : 'none';
+        });
+      });
+
+      tbody.querySelectorAll('button[data-copy-link]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const link = btn.dataset.copyLink;
+          const ok = await copyToClipboard(link);
+          if (ok) toast('Link gekopieerd', 'success');
+          else showCopyModal(link, 'link');
+        });
+      });
+    }
+
+    $('#startRoundBtn').addEventListener('click', async () => {
+      if (!confirm('Nieuwe ronde starten? Dit stuurt elk actief contact een mail.')) return;
+      $('#startRoundBtn').disabled = true;
+      $('#startRoundBtn').textContent = 'Versturen…';
+      const r = await fetch('/api/rounds', { method: 'POST', credentials: 'same-origin' });
+      const j = await r.json();
+      $('#startRoundBtn').disabled = false;
+      $('#startRoundBtn').textContent = 'Nieuwe ronde starten';
+      if (r.ok) {
+        toast(`Ronde verstuurd — ${j.sent} verzonden, ${j.failed} mislukt`, j.failed ? 'error' : 'success');
+        loadRounds();
+      } else {
+        toast(j.error || 'Kon ronde niet starten', 'error');
+      }
+    });
+
+    function syncIntervalPresetFromValue() {
+      const days = Number($('#intervalDays').value) || 90;
+      const presetOptions = ['7', '14', '30', '90', '180', '365'];
+      const presetSelect = $('#intervalPreset');
+      const customInput = $('#intervalDays');
+      if (presetOptions.includes(String(days))) {
+        presetSelect.value = String(days);
+        customInput.style.display = 'none';
+      } else {
+        presetSelect.value = 'custom';
+        customInput.style.display = '';
+      }
+    }
+
+    $('#intervalPreset').addEventListener('change', () => {
+      const customInput = $('#intervalDays');
+      const val = $('#intervalPreset').value;
+      if (val === 'custom') {
+        customInput.style.display = '';
+        customInput.focus();
+      } else {
+        customInput.value = val;
+        customInput.style.display = 'none';
+      }
+    });
+
+    async function loadSettings() {
+      const res = await fetch('/api/settings', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      $('#autoEnabled').checked = !!data.settings.autoEnabled;
+      $('#intervalDays').value = data.settings.intervalDays;
+      syncIntervalPresetFromValue();
+      $('#reminderEnabled').checked = !!data.settings.reminderEnabled;
+      $('#reminderAfterDays').value = data.settings.reminderAfterDays;
+      $('#lastRoundAt').textContent = data.settings.lastRoundAt
+        ? new Date(data.settings.lastRoundAt).toLocaleString('nl-NL')
+        : 'Nog geen ronde verstuurd';
+    }
+
+    $('#settingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      // Als preset geen "custom" is, neem die waarde over voor zekerheid
+      const preset = $('#intervalPreset').value;
+      const intervalDays = preset === 'custom'
+        ? Number($('#intervalDays').value)
+        : Number(preset);
+      const r = await fetch('/api/settings', {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          autoEnabled: $('#autoEnabled').checked,
+          intervalDays,
+          reminderEnabled: $('#reminderEnabled').checked,
+          reminderAfterDays: Number($('#reminderAfterDays').value),
+        }),
+      });
+      const j = await r.json();
+      if (r.ok) toast('Instellingen opgeslagen', 'success');
+      else toast(j.error || 'Kan niet opslaan', 'error');
+    });
+
+    $('#refreshBtn').addEventListener('click', loadAll);
+    $('#logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/login', { method: 'DELETE', credentials: 'same-origin' });
+      window.location.href = '/admin/login';
+    });
+
+    // ============ Audit log tab ============
+    const ACTION_LABELS = {
+      'admin.login.success': 'Login geslaagd',
+      'admin.login.failed': 'Login mislukt',
+      'admin.logout': 'Uitgelogd',
+      'contact.create': 'Contact toegevoegd',
+      'contact.update': 'Contact bijgewerkt',
+      'contact.activate': 'Contact geactiveerd',
+      'contact.deactivate': 'Contact gedeactiveerd',
+      'contact.account_manager': 'Account manager bijgewerkt',
+      'contact.optout': 'Contact uitgeschreven',
+      'contact.bounced': 'Contact bouncet',
+      'contact.import': 'Contacten geïmporteerd',
+      'round.start.bulk': 'Ronde gestart (alle actieve)',
+      'round.start.selection': 'Ronde gestart (selectie)',
+      'round.start.auto': 'Auto-ronde gestart',
+      'round.genlink': 'Survey-link gegenereerd',
+      'response.delete': 'Reactie verwijderd',
+      'response.exclude': 'Reactie uitgesloten',
+      'response.include': 'Reactie ingesloten',
+      'response.export': 'Reacties geëxporteerd',
+      'settings.update': 'Instellingen aangepast',
+      'reminders.sent': 'Reminders verstuurd',
+      'detractor.alert': 'Detractor-alert verstuurd',
+    };
+    const labelFor = (action) => ACTION_LABELS[action] || action;
+
+    function actorClass(actor) {
+      if (!actor) return 'unknown';
+      if (actor === 'system') return 'system';
+      if (actor === 'public') return 'public';
+      if (actor === 'unknown') return 'unknown';
+      return 'admin';
+    }
+
+    let allAuditLogs = [];
+    const AUDIT_PER_PAGE = 25;
+    let auditPage = 1;
+
+    async function loadAudit() {
+      const res = await fetch('/api/audit', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      allAuditLogs = data.logs || [];
+      populateAuditFilters();
+      auditPage = 1;
+      renderAuditTable();
+    }
+
+    function populateAuditFilters() {
+      const actors = Array.from(new Set(allAuditLogs.map(l => l.actor || 'unknown'))).sort();
+      const actions = Array.from(new Set(allAuditLogs.map(l => l.action))).sort();
+      $('#auditActorFilter').innerHTML = '<option value="">Alle</option>' +
+        actors.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+      $('#auditActionFilter').innerHTML = '<option value="">Alle</option>' +
+        actions.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(labelFor(a))}</option>`).join('');
+    }
+
+    function getFilteredAudit() {
+      const actor = $('#auditActorFilter').value;
+      const action = $('#auditActionFilter').value;
+      const fromVal = $('#auditFrom').value;
+      const toVal = $('#auditTo').value;
+      const from = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+      const to = toVal ? new Date(toVal + 'T23:59:59.999') : null;
+
+      return allAuditLogs.filter(l => {
+        if (actor && l.actor !== actor) return false;
+        if (action && l.action !== action) return false;
+        const t = new Date(l.timestamp);
+        if (from && t < from) return false;
+        if (to && t > to) return false;
+        return true;
+      });
+    }
+
+    function formatDetails(d) {
+      if (!d) return '';
+      if (typeof d === 'string') return escapeHtml(d);
+      try {
+        return Object.entries(d)
+          .map(([k, v]) => `<strong>${escapeHtml(k)}:</strong> ${escapeHtml(typeof v === 'object' ? JSON.stringify(v) : String(v))}`)
+          .join(' · ');
+      } catch { return escapeHtml(JSON.stringify(d)); }
+    }
+
+    function renderAuditTable() {
+      const filtered = getFilteredAudit();
+      const tbody = $('#auditTable tbody');
+      const paginationEl = $('#auditPagination');
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Geen logs voor deze filters.</td></tr>';
+        paginationEl.innerHTML = '';
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(filtered.length / AUDIT_PER_PAGE));
+      auditPage = Math.min(Math.max(1, auditPage), totalPages);
+      const start = (auditPage - 1) * AUDIT_PER_PAGE;
+      const pageItems = filtered.slice(start, start + AUDIT_PER_PAGE);
+
+      tbody.innerHTML = pageItems.map(l => `
+        <tr>
+          <td class="col-time">${escapeHtml(new Date(l.timestamp).toLocaleString('nl-NL'))}</td>
+          <td><span class="actor-pill ${actorClass(l.actor)}">${escapeHtml(l.actor || 'onbekend')}</span></td>
+          <td class="col-action">${escapeHtml(labelFor(l.action))}</td>
+          <td class="col-target">${escapeHtml(l.targetLabel || l.targetId || '—')}</td>
+          <td class="col-details">${formatDetails(l.details)}</td>
+        </tr>
+      `).join('');
+
+      if (totalPages > 1) {
+        paginationEl.innerHTML = `<div class="pagination">
+          <button class="btn secondary small" ${auditPage === 1 ? 'disabled' : ''} data-audit-prev>‹ Vorige</button>
+          <span class="pages">Pagina ${auditPage} van ${totalPages} <span class="meta">(${filtered.length} entries)</span></span>
+          <button class="btn secondary small" ${auditPage === totalPages ? 'disabled' : ''} data-audit-next>Volgende ›</button>
+        </div>`;
+        const prev = document.querySelector('[data-audit-prev]');
+        const next = document.querySelector('[data-audit-next]');
+        if (prev) prev.addEventListener('click', () => { auditPage--; renderAuditTable(); });
+        if (next) next.addEventListener('click', () => { auditPage++; renderAuditTable(); });
+      } else {
+        paginationEl.innerHTML = '';
+      }
+    }
+
+    ['#auditActorFilter', '#auditActionFilter', '#auditFrom', '#auditTo'].forEach(sel => {
+      $(sel).addEventListener('change', () => { auditPage = 1; renderAuditTable(); });
+    });
+    $('#auditResetBtn').addEventListener('click', () => {
+      $('#auditActorFilter').value = '';
+      $('#auditActionFilter').value = '';
+      $('#auditFrom').value = '';
+      $('#auditTo').value = '';
+      auditPage = 1;
+      renderAuditTable();
+    });
+
+    function loadAll() {
+      loadOverview();
+      loadContacts();
+      loadRounds();
+      loadSettings();
+      loadAudit();
+    }
+    loadAll();
+  </script>
+</body>
+</html>
