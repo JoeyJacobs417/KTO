@@ -52,9 +52,25 @@ module.exports = async (req, res) => {
 
   const data = body.data || {};
   const bounce = data.bounce || {};
-  const isHard = (bounce.type === 'hard') ||
-                 (bounce.subType === 'permanent') ||
-                 ((bounce.message || '').toLowerCase().includes('does not exist'));
+  // Resend gebruikt o.a. type: "Permanent" / "Transient", subType: "General" / "Suppressed", etc.
+  // Wij behandelen alle "permanente" / "hard" bounces als hard.
+  const typeNorm = String(bounce.type || '').toLowerCase();
+  const subTypeNorm = String(bounce.subType || '').toLowerCase();
+  const messageNorm = (bounce.message || '').toLowerCase();
+  const diagnosticNorm = Array.isArray(bounce.diagnosticCode)
+    ? bounce.diagnosticCode.join(' ').toLowerCase()
+    : String(bounce.diagnosticCode || '').toLowerCase();
+
+  const isHard =
+    typeNorm === 'hard' ||
+    typeNorm === 'permanent' ||
+    subTypeNorm === 'permanent' ||
+    subTypeNorm === 'suppressed' ||
+    messageNorm.includes('hard bounce') ||
+    messageNorm.includes('does not exist') ||
+    diagnosticNorm.includes('does not exist') ||
+    diagnosticNorm.includes('no such user') ||
+    diagnosticNorm.includes('user unknown');
 
   if (!isHard) {
     res.statusCode = 200;
