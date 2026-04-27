@@ -2,6 +2,7 @@ const { isAuthenticated } = require('../lib/auth');
 const storage = require('../lib/storage');
 const contactsLib = require('../lib/contacts');
 const roundsLib = require('../lib/rounds');
+const audit = require('../lib/audit');
 
 function readJson(req) {
   return new Promise((resolve, reject) => {
@@ -36,9 +37,7 @@ function computeStats(entries) {
   const avg = Math.round((sum / n) * 100) / 100;
   const nps = Math.round(((promoters - detractors) / n) * 100);
   return {
-    count: n,
-    avgOverall: avg,
-    nps,
+    count: n, avgOverall: avg, nps,
     promoters, passives, detractors,
     promotersPct: Math.round((promoters / n) * 100),
     passivesPct: Math.round((passives / n) * 100),
@@ -55,7 +54,8 @@ function csvEscape(v) {
 function buildCsv(responses) {
   const headers = [
     'Datum', 'Naam', 'Bedrijf', 'E-mail', 'Account manager',
-    'Cijfer', 'Waardeert', 'Verbeteren', 'AI-kansen', 'Ronde-id', 'Uitgesloten',
+    'Cijfer', 'Reden lage score', 'Waardeert', 'Verbeteren', 'AI-kansen',
+    'Ronde-id', 'Uitgesloten',
   ];
   const rows = responses.map(e => {
     const a = e.answers || {};
@@ -68,6 +68,7 @@ function buildCsv(responses) {
       c.email || a.email || '',
       c.accountManager || '',
       a.q1_overall != null ? a.q1_overall : '',
+      a.q_low_reason || '',
       a.q6_likes || '',
       a.q7_improve || '',
       a.q4_ai_opportunities || '',
@@ -76,6 +77,13 @@ function buildCsv(responses) {
     ].map(csvEscape).join(';');
   });
   return '\uFEFF' + headers.map(csvEscape).join(';') + '\n' + rows.join('\n');
+}
+
+function responseLabel(e) {
+  const a = e.answers || {};
+  const name = (e.contact && e.contact.name) || a.name || 'Anoniem';
+  const score = a.q1_overall != null ? `${a.q1_overall}/10` : '—';
+  return `${name} (${score})`;
 }
 
 module.exports = async (req, res) => {
@@ -88,6 +96,8 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const id = url.searchParams.get('id');
   const format = url.searchParams.get('format');
+  const actor = audit.getActor(req);
+  const ip = audit.getIp(req);
 
   if (req.method === 'PATCH') {
     if (!id) {
@@ -110,7 +120,18 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify({ error: 'Niet gevonden' }));
     }
     if (body.excluded !== undefined) {
-      all[idx].excluded = Boolean(body.excluded);
+      const wasExcluded = !!all[idx].excluded;
+      const willBeExcluded = Boolean(body.excluded);
+      all[idx].excluded = willBeExcluded;
+      try {
+        await audit.log({
+          actor, ip,
+          action: willBeExcluded ? 'response.exclude' : 'response.include',
+          targetType: 'response',
+          targetId: all[idx].id,
+          targetLabel: responseLabel(all[idx]),
+        });
+      } catch (e) { console.error('Audit error:', e); }
     }
     await storage.write('responses', all);
     res.statusCode = 200;
@@ -144,6 +165,14 @@ module.exports = async (req, res) => {
       }
     }
 
+    try {
+      await audit.log({
+        actor, ip, action: 'response.delete',
+        targetType: 'response', targetId: target.id,
+        targetLabel: responseLabel(target),
+      });
+    } catch (e) { console.error('Audit error:', e); }
+
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     return res.end(JSON.stringify({ ok: true }));
@@ -168,6 +197,9 @@ module.exports = async (req, res) => {
     });
 
   if (format === 'csv') {
+    try {
+      await audit.log({ actor, ip, action: 'response.export' });
+    } catch (e) { console.error('Audit error:', e); }
     const csv = buildCsv(enriched);
     const filename = `klanttevredenheid-${new Date().toISOString().slice(0, 10)}.csv`;
     res.statusCode = 200;

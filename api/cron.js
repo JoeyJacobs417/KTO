@@ -1,8 +1,7 @@
-// Cron endpoint — wordt aangeroepen door Vercel Cron.
-// Doet twee dingen:
-//   1) Auto-ronde starten als die "due" is
-//   2) Reminders versturen voor non-responders (ongeacht auto-ronde)
+// Cron endpoint — dagelijks aangeroepen.
+// Verstuurt: (1) auto-uitnodigingen aan contacten die "due" zijn, (2) reminders.
 const campaign = require('../lib/campaign');
+const settings = require('../lib/settings');
 
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
@@ -23,12 +22,23 @@ module.exports = async (req, res) => {
 
   const result = { ok: true };
 
-  // 1) Auto-ronde
+  // 1) Auto-uitnodigingen op basis van per-contact schema
   try {
-    if (await campaign.dueForAutoRound()) {
-      result.autoRound = await campaign.startRound({ triggeredBy: 'auto' });
+    const s = await settings.get();
+    if (!s.autoEnabled) {
+      result.autoRound = { triggered: false, reason: 'auto_disabled' };
     } else {
-      result.autoRound = { triggered: false, reason: 'not_due' };
+      const due = await campaign.dueContacts();
+      if (due.length === 0) {
+        result.autoRound = { triggered: false, reason: 'no_due_contacts' };
+      } else {
+        const round = await campaign.startRound({
+          triggeredBy: 'auto',
+          contactIds: due.map(c => c.id),
+          sendEmail: true,
+        });
+        result.autoRound = round;
+      }
     }
   } catch (e) {
     result.autoRound = { error: String(e) };

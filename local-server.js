@@ -26,6 +26,8 @@ const settings = require('./api/settings');
 const cron = require('./api/cron');
 const invitation = require('./api/invitation');
 const optout = require('./api/optout');
+const resendWebhook = require('./api/resend-webhook');
+const audit = require('./api/audit');
 const campaign = require('./lib/campaign');
 
 const MIME = {
@@ -67,6 +69,8 @@ const server = http.createServer(async (req, res) => {
     if (req.url.startsWith('/api/cron')) return cron(req, res);
     if (req.url.startsWith('/api/invitation')) return invitation(req, res);
     if (req.url.startsWith('/api/optout')) return optout(req, res);
+    if (req.url.startsWith('/api/resend-webhook')) return resendWebhook(req, res);
+    if (req.url.startsWith('/api/audit')) return audit(req, res);
     serveStatic(req, res);
   } catch (e) {
     console.error(e);

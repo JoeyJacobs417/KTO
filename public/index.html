@@ -18,6 +18,20 @@
     .status-icon.done { background: #ecfdf5; color: #065f46; }
     .status-icon.expired { background: #fef3c7; color: #92400e; }
     .hidden { display: none !important; }
+
+    /* Conditionele vervolgvraag bij lage score */
+    .followup {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--border);
+      animation: revealFollowup 0.25s ease-out;
+    }
+    @keyframes revealFollowup {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .followup .label { color: var(--text); }
+    .followup .hint.required { color: #ef4444; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -27,14 +41,12 @@
       <div class="name">Klanttevredenheidsonderzoek</div>
     </div>
 
-    <!-- Status-pagina (alreadyResponded / expired / invalid) -->
     <div id="statusPage" class="hidden status-page">
       <div class="status-icon" id="statusIcon"></div>
       <h1 id="statusTitle"></h1>
       <p class="lead" id="statusMessage"></p>
     </div>
 
-    <!-- Survey-formulier -->
     <div id="formContainer">
       <h1 id="surveyTitle">We horen graag van je</h1>
       <p class="lead">Jouw feedback helpt ons onze dienstverlening te verbeteren. Dit kost je minder dan 3 minuten.</p>
@@ -47,6 +59,12 @@
         <div class="question" data-required="true">
           <label class="label" for="q1_overall">1. Welk cijfer geef je ons voor onze dienstverlening? <span class="hint">(1 t/m 10)</span></label>
           <input type="number" id="q1_overall" name="q1_overall" min="1" max="10" step="1" required inputmode="numeric" placeholder="8" class="input-rating" />
+
+          <!-- Conditionele vervolgvraag: alleen zichtbaar bij score ≤ 6, dan verplicht -->
+          <div class="followup hidden" id="lowReasonFollowup">
+            <label class="label" for="q_low_reason">Wat is de belangrijkste reden voor deze score? <span class="hint required">(verplicht)</span></label>
+            <textarea id="q_low_reason" name="q_low_reason" maxlength="600" placeholder="Help ons begrijpen wat er anders moet — concrete voorbeelden zijn waardevol"></textarea>
+          </div>
         </div>
 
         <div class="question">
@@ -96,6 +114,9 @@
     const notice = document.getElementById('notice');
     const submitBtn = document.getElementById('submitBtn');
     const requiredQs = Array.from(document.querySelectorAll('.question[data-required="true"]'));
+    const q1Input = document.getElementById('q1_overall');
+    const lowReasonFollowup = document.getElementById('lowReasonFollowup');
+    const lowReasonInput = document.getElementById('q_low_reason');
 
     function showStatus(kind, title, message) {
       formContainer.classList.add('hidden');
@@ -135,7 +156,6 @@
           if (emailInput) emailInput.value = data.contact.email || '';
           const cq = document.getElementById('contactQuestion');
           if (cq) cq.style.display = 'none';
-
           const greetName = data.contact.name ? data.contact.name.split(' ')[0] : null;
           if (greetName) {
             document.getElementById('surveyTitle').textContent = `Hoi ${greetName}, we horen graag van je`;
@@ -156,11 +176,42 @@
       return false;
     }
 
-    function updateProgress() {
-      const answered = requiredQs.filter(isAnswered).length;
-      bar.style.width = ((answered / requiredQs.length) * 100) + '%';
+    function isLowScore() {
+      const v = Number(q1Input.value);
+      return Number.isFinite(v) && v >= 1 && v <= 6;
     }
 
+    function lowReasonAnswered() {
+      return (lowReasonInput.value || '').trim().length > 0;
+    }
+
+    function updateLowReasonVisibility() {
+      if (isLowScore()) {
+        lowReasonFollowup.classList.remove('hidden');
+        lowReasonInput.required = true;
+      } else {
+        lowReasonFollowup.classList.add('hidden');
+        lowReasonInput.required = false;
+      }
+    }
+
+    function updateProgress() {
+      // Verplichte vragen telt: q1 + (conditioneel) low_reason
+      const baseRequired = requiredQs.length;
+      const conditionalRequired = isLowScore() ? 1 : 0;
+      const total = baseRequired + conditionalRequired;
+      let answered = requiredQs.filter(isAnswered).length;
+      if (conditionalRequired) {
+        if (lowReasonAnswered()) answered += 1;
+      }
+      bar.style.width = ((answered / total) * 100) + '%';
+    }
+
+    q1Input.addEventListener('input', () => {
+      updateLowReasonVisibility();
+      updateProgress();
+    });
+    lowReasonInput.addEventListener('input', updateProgress);
     form.addEventListener('change', updateProgress);
     form.addEventListener('input', updateProgress);
 
@@ -168,6 +219,7 @@
       e.preventDefault();
       notice.classList.remove('show');
 
+      // Standaard verplichte vragen
       for (const q of requiredQs) {
         if (!isAnswered(q)) {
           notice.textContent = 'Vul alsjeblieft alle verplichte vragen in.';
@@ -175,6 +227,15 @@
           q.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
+      }
+
+      // Conditionele vraag bij lage score
+      if (isLowScore() && !lowReasonAnswered()) {
+        notice.textContent = 'Bij een score van 6 of lager vragen we je om de belangrijkste reden in te vullen.';
+        notice.classList.add('show');
+        lowReasonFollowup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        lowReasonInput.focus();
+        return;
       }
 
       submitBtn.disabled = true;
@@ -189,7 +250,6 @@
           body: JSON.stringify(data),
         });
         if (res.status === 410) {
-          // Token verlopen of al beantwoord
           const j = await res.json().catch(() => ({}));
           if ((j.error || '').includes('al ingevuld')) {
             showStatus('done', 'Deze survey is al ingevuld', 'Bedankt voor je eerdere reactie. We hebben hem goed ontvangen.');
@@ -198,16 +258,20 @@
           }
           return;
         }
-        if (!res.ok) throw new Error('Server error ' + res.status);
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || 'Server error ' + res.status);
+        }
         window.location.href = '/bedankt';
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Versturen';
-        notice.textContent = 'Er ging iets mis. Probeer het later opnieuw.';
+        notice.textContent = err.message || 'Er ging iets mis. Probeer het later opnieuw.';
         notice.classList.add('show');
       }
     });
 
+    updateLowReasonVisibility();
     updateProgress();
   </script>
 </body>

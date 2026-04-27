@@ -1,4 +1,5 @@
 const { createToken, setAuthCookie, clearAuthCookie } = require('../lib/auth');
+const audit = require('../lib/audit');
 const crypto = require('crypto');
 
 function readJson(req) {
@@ -22,7 +23,13 @@ function safeEqual(a, b) {
 
 module.exports = async (req, res) => {
   if (req.method === 'DELETE') {
+    const actor = audit.getActor(req);
     clearAuthCookie(res);
+    if (actor && actor !== 'public') {
+      try {
+        await audit.log({ actor, action: 'admin.logout', ip: audit.getIp(req) });
+      } catch (e) { console.error('Audit error:', e); }
+    }
     res.statusCode = 200;
     return res.end(JSON.stringify({ ok: true }));
   }
@@ -51,6 +58,13 @@ module.exports = async (req, res) => {
   const p = String(body.password || '');
 
   if (!safeEqual(u, expectedUser) || !safeEqual(p, expectedPass)) {
+    try {
+      await audit.log({
+        actor: u || 'unknown',
+        action: 'admin.login.failed',
+        ip: audit.getIp(req),
+      });
+    } catch (e) { console.error('Audit error:', e); }
     res.statusCode = 401;
     return res.end(JSON.stringify({ error: 'Onjuiste gebruikersnaam of wachtwoord.' }));
   }
@@ -62,6 +76,10 @@ module.exports = async (req, res) => {
     res.statusCode = 500;
     return res.end(JSON.stringify({ error: e.message }));
   }
+
+  try {
+    await audit.log({ actor: u, action: 'admin.login.success', ip: audit.getIp(req) });
+  } catch (e) { console.error('Audit error:', e); }
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');

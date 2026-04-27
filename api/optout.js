@@ -1,7 +1,6 @@
-// Publiek opt-out endpoint: GET /api/optout?t=<token>
-// Markeert het contact als uitgeschreven en toont een bevestigingspagina.
 const rounds = require('../lib/rounds');
 const contacts = require('../lib/contacts');
+const audit = require('../lib/audit');
 
 function renderHtml(title, message) {
   const safeTitle = String(title).replace(/</g, '&lt;');
@@ -48,7 +47,18 @@ module.exports = async (req, res) => {
   }
 
   try {
+    const before = await contacts.getById(inv.contactId);
     await contacts.update(inv.contactId, { optOut: true, active: false });
+    try {
+      await audit.log({
+        actor: 'public',
+        ip: audit.getIp(req),
+        action: 'contact.optout',
+        targetType: 'contact',
+        targetId: inv.contactId,
+        targetLabel: before ? ([before.name, before.company].filter(Boolean).join(' — ') || before.email) : inv.contactId,
+      });
+    } catch (e) { console.error('Audit error:', e); }
   } catch (e) {
     console.error('Opt-out update error:', e);
     res.statusCode = 500;

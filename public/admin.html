@@ -42,17 +42,16 @@
       background: rgba(124, 92, 255, 0.04) !important;
     }
     .btn.small { padding: 8px 14px; font-size: 13px; }
-    .btn.danger { background: #ef4444; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25); }
 
     .status-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
     .status-pill.active { background: #ecfdf5; color: #065f46; }
     .status-pill.inactive { background: #f1f5f9; color: #64748b; }
     .status-pill.optout { background: #fef3c7; color: #92400e; }
+    .status-pill.bounced { background: #fee2e2; color: #991b1b; }
     .status-pill.sent { background: #eff6ff; color: #1e40af; }
     .status-pill.pending { background: #fef3c7; color: #92400e; }
     .status-pill.responded { background: #ecfdf5; color: #065f46; }
 
-    /* Inline edit voor accountmanager */
     input.am-edit {
       width: 100%; padding: 4px 8px;
       background: transparent; border: 1px solid transparent; border-radius: 4px;
@@ -63,7 +62,16 @@
     input.am-edit:focus { background: var(--bg-elev); border-color: var(--accent); outline: none; }
     input.am-edit::placeholder { color: var(--text-muted); font-style: italic; }
 
-    /* Tijdlijn (per contact view) */
+    /* Inline interval-override select */
+    select.interval-edit {
+      padding: 4px 8px; border: 1px solid transparent; border-radius: 4px;
+      background: transparent; color: var(--text); font-size: 13px; font-family: inherit;
+      cursor: pointer; min-width: 140px;
+    }
+    select.interval-edit:hover { border-color: var(--border); background: var(--bg-elev); }
+    select.interval-edit:focus { background: var(--bg-elev); border-color: var(--accent); outline: none; }
+    select.interval-edit.overridden { font-weight: 600; color: var(--accent); }
+
     .timeline { display: grid; gap: 10px; }
     .timeline-item {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -144,7 +152,6 @@
       background: #fef3c7; color: #92400e; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.04em;
     }
 
-    /* Periodefilter */
     .period-filter {
       display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
       margin-bottom: 20px; padding: 14px 18px;
@@ -166,7 +173,6 @@
       background: var(--bg-elev); color: var(--text); font-size: 13px; font-family: inherit;
     }
 
-    /* NPS breakdown */
     .nps-breakdown {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 16px 20px; box-shadow: var(--shadow); margin-bottom: 24px;
@@ -204,7 +210,6 @@
     .nps-legend .dot.passives { background: #f59e0b; }
     .nps-legend .dot.detractors { background: #ef4444; }
 
-    /* Trend chart */
     .trend-section {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 20px; box-shadow: var(--shadow); margin-bottom: 24px;
@@ -213,7 +218,6 @@
     .trend-svg { width: 100%; height: auto; max-height: 280px; display: block; }
     .trend-empty { color: var(--text-muted); font-size: 14px; padding: 24px; text-align: center; }
 
-    /* Contacten — selectie + bulk-balk */
     .bulk-bar {
       display: none;
       align-items: center; gap: 12px; flex-wrap: wrap;
@@ -230,7 +234,6 @@
     table.data tr.selected td { background: rgba(124, 92, 255, 0.05); }
     table.data .row-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
-    /* Rounds expand */
     .round-row { cursor: pointer; }
     .round-row .chevron { display: inline-block; transition: transform 0.15s ease; color: var(--text-muted); margin-right: 6px; }
     .round-row.open .chevron { transform: rotate(90deg); }
@@ -245,7 +248,6 @@
     .invitation-item .who { font-weight: 500; }
     .invitation-item .who .email { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
 
-    /* Paginatie */
     .pagination {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; margin: 16px 0 8px; padding: 12px 0;
@@ -255,7 +257,6 @@
     .pagination .pages { font-weight: 500; }
     .pagination .pages .meta { color: var(--text-muted); font-weight: 400; margin-left: 4px; }
 
-    /* Dashboard dropdowns */
     .dashboard-select {
       padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
       background: var(--bg-elev); color: var(--text); font-family: inherit; font-size: 14px;
@@ -264,7 +265,6 @@
     }
     .dashboard-select:focus { outline: none; border-color: var(--accent); }
 
-    /* Selected-summary box */
     .selected-summary {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 18px 22px; box-shadow: var(--shadow); margin-bottom: 16px;
@@ -285,6 +285,71 @@
     .company-contacts-table td:nth-child(3), .company-contacts-table td:nth-child(4) {
       text-align: right;
     }
+
+    /* Audit log */
+    .audit-filters {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 16px; padding: 12px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); font-size: 14px;
+    }
+    .audit-filters label { color: var(--text-muted); font-weight: 500; }
+    .audit-filters select, .audit-filters input[type="date"] {
+      padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg-elev); color: var(--text); font-size: 13px; font-family: inherit;
+    }
+    .audit-filters .spacer { flex: 1; }
+
+    .audit-table th, .audit-table td { font-size: 13px; vertical-align: top; }
+    .audit-table .col-time { white-space: nowrap; min-width: 140px; color: var(--text-muted); }
+    .audit-table .col-action { white-space: nowrap; }
+    .audit-table .col-target { max-width: 240px; word-break: break-word; }
+    .audit-table .col-details { color: var(--text-muted); word-break: break-word; }
+
+    .actor-pill {
+      display: inline-block; padding: 2px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+    }
+    .actor-pill.admin { background: rgba(124, 92, 255, 0.12); color: var(--accent); }
+    .actor-pill.system { background: #eff6ff; color: #1e40af; }
+    .actor-pill.public { background: #f1f5f9; color: #64748b; }
+    .actor-pill.unknown { background: #fef2f2; color: #991b1b; }
+
+    /* Contact filters */
+    .contacts-filters {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 16px; padding: 12px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); font-size: 14px;
+    }
+    .contacts-filters input[type="search"], .contacts-filters select {
+      padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg-elev); color: var(--text); font-size: 13px; font-family: inherit;
+    }
+    .contacts-filters input[type="search"] { min-width: 220px; }
+    .contacts-filters .spacer { flex: 1; }
+    .contacts-filters .results-meta { color: var(--text-muted); font-size: 13px; }
+
+    /* Copy modal — fallback voor wanneer clipboard niet werkt */
+    .copy-modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+      padding: 20px;
+    }
+    .copy-modal-overlay.show { display: flex; }
+    .copy-modal {
+      background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+      max-width: 560px; width: 100%; padding: 24px; border: 1px solid var(--border);
+    }
+    .copy-modal h3 { margin: 0 0 12px; font-size: 18px; }
+    .copy-modal p { margin: 0 0 16px; color: var(--text-muted); font-size: 14px; }
+    .copy-modal textarea {
+      width: 100%; min-height: 80px; padding: 10px 12px;
+      background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 13px; resize: vertical;
+    }
+    .copy-modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   </style>
 </head>
 <body>
@@ -307,6 +372,7 @@
       <button class="tab-btn" data-tab="contacts">Contacten</button>
       <button class="tab-btn" data-tab="rounds">Rondes</button>
       <button class="tab-btn" data-tab="settings">Instellingen</button>
+      <button class="tab-btn" data-tab="audit">Audit log</button>
     </div>
 
     <section class="tab-pane active" id="tab-overview">
@@ -370,6 +436,26 @@
       </label>
       <div id="csvResult" class="meta" style="margin-bottom:12px;"></div>
 
+      <div class="contacts-filters">
+        <input type="search" id="contactSearch" placeholder="Zoek op naam, bedrijf of e-mail..." />
+        <select id="filterStatus">
+          <option value="">Alle statussen</option>
+          <option value="active">Alleen actieve</option>
+          <option value="inactive">Alleen inactieve</option>
+          <option value="optout">Alleen uitgeschreven</option>
+          <option value="bounced">Alleen bounced</option>
+        </select>
+        <select id="filterAM">
+          <option value="">Alle account managers</option>
+        </select>
+        <select id="filterCompany">
+          <option value="">Alle bedrijven</option>
+        </select>
+        <button class="btn secondary small" id="filterResetBtn">Reset filters</button>
+        <span class="spacer"></span>
+        <span class="results-meta" id="contactsResultsMeta"></span>
+      </div>
+
       <div class="bulk-bar" id="bulkBar">
         <span class="count" id="bulkCount">0 geselecteerd</span>
         <span class="spacer"></span>
@@ -381,7 +467,7 @@
         <thead>
           <tr>
             <th class="col-check"><input type="checkbox" id="selectAll" /></th>
-            <th>Naam</th><th>Bedrijf</th><th>E-mail</th><th>Account manager</th><th>Status</th><th></th>
+            <th>Naam</th><th>Bedrijf</th><th>E-mail</th><th>Account manager</th><th>Interval</th><th>Status</th><th></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -403,6 +489,41 @@
       </table>
     </section>
 
+    <section class="tab-pane" id="tab-audit">
+      <div class="section-head">
+        <h2>Audit log</h2>
+        <div class="actions-right">
+          <a class="btn secondary small" id="auditExportBtn" href="/api/audit?format=csv" download>Exporteer naar Excel</a>
+        </div>
+      </div>
+      <p class="meta" style="margin-top:0;">Alle admin-acties, automatische systeem-events en publieke acties (zoals opt-outs) worden hier gelogd. Maximaal 5000 entries — oudere worden automatisch opgeruimd.</p>
+
+      <div class="audit-filters">
+        <label>Gebruiker</label>
+        <select id="auditActorFilter">
+          <option value="">Alle</option>
+        </select>
+        <label>Actie</label>
+        <select id="auditActionFilter">
+          <option value="">Alle</option>
+        </select>
+        <label>Van</label>
+        <input type="date" id="auditFrom" />
+        <label>tot</label>
+        <input type="date" id="auditTo" />
+        <span class="spacer"></span>
+        <button class="btn secondary small" id="auditResetBtn">Reset filters</button>
+      </div>
+
+      <table class="data audit-table" id="auditTable">
+        <thead>
+          <tr><th>Tijdstip</th><th>Gebruiker</th><th>Actie</th><th>Target</th><th>Details</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="auditPagination"></div>
+    </section>
+
     <section class="tab-pane" id="tab-settings">
       <div class="section-head"><h2>Instellingen</h2></div>
 
@@ -414,9 +535,20 @@
           </label>
         </div>
         <div class="field">
-          <label for="intervalDays">Interval (in dagen)</label>
-          <input type="number" id="intervalDays" min="1" max="3650" step="1" style="max-width:160px;" />
-          <div class="meta" style="margin-top:6px;">Bijvoorbeeld 30 voor maandelijks, 90 voor kwartaal.</div>
+          <label for="intervalPreset">Interval</label>
+          <select id="intervalPreset" style="max-width:260px;">
+            <option value="7">Wekelijks (7 dagen)</option>
+            <option value="14">Tweewekelijks (14 dagen)</option>
+            <option value="30">Maandelijks (30 dagen)</option>
+            <option value="90">Per kwartaal (90 dagen)</option>
+            <option value="180">Halfjaarlijks (180 dagen)</option>
+            <option value="365">Jaarlijks (365 dagen)</option>
+            <option value="custom">Aangepast aantal dagen…</option>
+          </select>
+          <input type="number" id="intervalDays" min="1" max="3650" step="1" style="max-width:160px;margin-top:8px;display:none;" />
+          <div class="meta" style="margin-top:6px;">
+            Dit is de standaard. Per contact kun je dit overschrijven op de Contacten-tab.
+          </div>
         </div>
         <div class="field">
           <label>Laatst verzonden ronde</label>
@@ -456,16 +588,73 @@
     }
 
     async function copyToClipboard(text) {
-      try { await navigator.clipboard.writeText(text); return true; }
-      catch {
+      // 1) Modern Clipboard API (HTTPS-context, modern browsers)
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) {
+          console.warn('Clipboard API faalde, fallback wordt geprobeerd:', e);
+        }
+      }
+      // 2) Fallback met execCommand — vereist zichtbare textarea, kort focus
+      try {
         const ta = document.createElement('textarea');
         ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '0';
+        ta.style.width = '2em';
+        ta.style.height = '2em';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+        ta.style.opacity = '0';
         document.body.appendChild(ta);
+        ta.focus();
         ta.select();
-        const ok = document.execCommand('copy');
+        ta.setSelectionRange(0, text.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch {}
         document.body.removeChild(ta);
-        return ok;
+        if (ok) return true;
+      } catch (e) {
+        console.error('Fallback copy faalde:', e);
       }
+      return false;
+    }
+
+    function showCopyModal(text, label) {
+      let overlay = document.getElementById('copyModalOverlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'copyModalOverlay';
+        overlay.className = 'copy-modal-overlay';
+        overlay.innerHTML = `
+          <div class="copy-modal">
+            <h3>Kopieer de link</h3>
+            <p>Automatisch kopiëren lukte niet. Selecteer de link hieronder en kopieer hem zelf met <strong>Cmd+C</strong> (Mac) of <strong>Ctrl+C</strong> (Windows).</p>
+            <textarea id="copyModalText" readonly></textarea>
+            <div class="actions">
+              <button class="btn secondary small" id="copyModalCloseBtn">Sluiten</button>
+              <button class="btn small" id="copyModalSelectBtn">Selecteer alles</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.classList.remove('show'); });
+        document.getElementById('copyModalCloseBtn').addEventListener('click', () => overlay.classList.remove('show'));
+        document.getElementById('copyModalSelectBtn').addEventListener('click', () => {
+          const ta = document.getElementById('copyModalText');
+          ta.focus(); ta.select();
+        });
+      }
+      const ta = document.getElementById('copyModalText');
+      ta.value = text;
+      overlay.classList.add('show');
+      setTimeout(() => { ta.focus(); ta.select(); }, 50);
     }
 
     document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
@@ -475,7 +664,6 @@
       $('#tab-' + b.dataset.tab).classList.add('active');
     }));
 
-    // ============ Stats / NPS / Trend ============
     function renderStats(s) {
       const npsLabel = s.nps != null ? (s.nps > 0 ? `+${s.nps}` : String(s.nps)) : '—';
       $('#stats').innerHTML = [
@@ -594,7 +782,6 @@
         </div>`;
     }
 
-    // ============ Reactie-card + paginatie helpers ============
     function renderResponseCard(e) {
       const a = e.answers || {};
       const who = e.contact
@@ -603,6 +790,7 @@
       const when = new Date(e.createdAt).toLocaleString('nl-NL');
       const rows = [
         a.q1_overall != null ? `<dt>Cijfer</dt><dd>${escapeHtml(String(a.q1_overall))}</dd>` : '',
+        a.q_low_reason ? `<dt>Reden lage score</dt><dd>${escapeHtml(a.q_low_reason)}</dd>` : '',
         a.q6_likes ? `<dt>Waardeert</dt><dd>${escapeHtml(a.q6_likes)}</dd>` : '',
         a.q7_improve ? `<dt>Verbeteren</dt><dd>${escapeHtml(a.q7_improve)}</dd>` : '',
         a.q4_ai_opportunities ? `<dt>AI-kansen</dt><dd>${escapeHtml(a.q4_ai_opportunities)}</dd>` : '',
@@ -661,7 +849,6 @@
       </div>`;
     }
 
-    // ============ Recente reacties (paginated) ============
     const RECENT_PER_PAGE = 5;
     const COMPANY_RESPONSES_PER_PAGE = 5;
     let recentPage = 1;
@@ -692,7 +879,6 @@
       }
     }
 
-    // ============ Per contact / Per bedrijf ============
     function renderTimelineItem(e) {
       const when = new Date(e.createdAt).toLocaleDateString('nl-NL');
       const a = e.answers || {};
@@ -700,6 +886,7 @@
       const exClass = e.excluded ? ' excluded' : '';
       const exBadge = e.excluded ? ' <span class="excluded-badge">Uitgesloten</span>' : '';
       const answerRows = [
+        a.q_low_reason ? `<dt>Reden lage score</dt><dd>${escapeHtml(a.q_low_reason)}</dd>` : '',
         a.q6_likes ? `<dt>Waardeert</dt><dd>${escapeHtml(a.q6_likes)}</dd>` : '',
         a.q7_improve ? `<dt>Verbeteren</dt><dd>${escapeHtml(a.q7_improve)}</dd>` : '',
         a.q4_ai_opportunities ? `<dt>AI-kansen</dt><dd>${escapeHtml(a.q4_ai_opportunities)}</dd>` : '',
@@ -903,7 +1090,6 @@
       renderSelectedCompany($('#companySelect').value, stats);
     });
 
-    // ============ Periode-filter + state ============
     let allResponsesCache = [];
     let currentFilteredResponses = [];
 
@@ -1004,8 +1190,8 @@
       applyPeriodFilter();
     }
 
-    // ============ Contacten-tab ============
     let selectedContactIds = new Set();
+    let allContactsCache = [];
 
     function updateBulkBar() {
       const bar = $('#bulkBar');
@@ -1026,35 +1212,98 @@
       });
     }
 
-    async function loadContacts() {
-      const res = await fetch('/api/contacts', { credentials: 'same-origin' });
-      if (res.status === 401) { window.location.href = '/admin/login'; return; }
-      const data = await res.json();
+    function populateContactFilters(contacts) {
+      const ams = Array.from(new Set(contacts.map(c => (c.accountManager || '').trim()).filter(Boolean))).sort();
+      const companies = Array.from(new Set(contacts.map(c => (c.company || '').trim()).filter(Boolean))).sort();
+      const amSelect = $('#filterAM');
+      const companySelect = $('#filterCompany');
+      const prevAM = amSelect.value;
+      const prevCompany = companySelect.value;
+      amSelect.innerHTML = '<option value="">Alle account managers</option>' +
+        ams.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+      companySelect.innerHTML = '<option value="">Alle bedrijven</option>' +
+        companies.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      if (ams.includes(prevAM)) amSelect.value = prevAM;
+      if (companies.includes(prevCompany)) companySelect.value = prevCompany;
+    }
+
+    function filterContacts(contacts) {
+      const search = ($('#contactSearch').value || '').toLowerCase().trim();
+      const status = $('#filterStatus').value;
+      const am = $('#filterAM').value;
+      const company = $('#filterCompany').value;
+      return contacts.filter(c => {
+        if (search) {
+          const hay = `${c.name || ''} ${c.company || ''} ${c.email || ''} ${c.accountManager || ''}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        if (status === 'active' && (!c.active || c.optOut || c.bounced)) return false;
+        if (status === 'inactive' && (c.active || c.optOut || c.bounced)) return false;
+        if (status === 'optout' && !c.optOut) return false;
+        if (status === 'bounced' && !c.bounced) return false;
+        if (am && (c.accountManager || '') !== am) return false;
+        if (company && (c.company || '') !== company) return false;
+        return true;
+      });
+    }
+
+    const INTERVAL_PRESETS = [
+      { value: '', label: 'Standaard' },
+      { value: '7', label: 'Wekelijks (7d)' },
+      { value: '14', label: 'Tweewekelijks (14d)' },
+      { value: '30', label: 'Maandelijks (30d)' },
+      { value: '90', label: 'Per kwartaal (90d)' },
+      { value: '180', label: 'Halfjaarlijks (180d)' },
+      { value: '365', label: 'Jaarlijks (365d)' },
+    ];
+
+    function intervalOptions(currentVal) {
+      const cv = currentVal == null ? '' : String(currentVal);
+      const presets = INTERVAL_PRESETS.map(p =>
+        `<option value="${p.value}"${p.value === cv ? ' selected' : ''}>${p.label}</option>`
+      ).join('');
+      // Als de huidige waarde geen preset is, voeg 'm toch toe als optie
+      const isPreset = INTERVAL_PRESETS.some(p => p.value === cv);
+      if (!isPreset && cv) {
+        return presets + `<option value="${cv}" selected>${escapeHtml(cv)} dagen (aangepast)</option>`;
+      }
+      return presets;
+    }
+
+    function renderContactsTable(contacts) {
       const tbody = $('#contactsTable tbody');
-      if (!data.contacts.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Nog geen contacten.</td></tr>';
-        selectedContactIds.clear();
-        updateBulkBar();
+      const totalCount = allContactsCache.length;
+      if (!contacts.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">${totalCount === 0 ? 'Nog geen contacten.' : 'Geen contacten voor deze filters.'}</td></tr>`;
+        $('#contactsResultsMeta').textContent = totalCount > 0 ? `0 van ${totalCount}` : '';
         return;
       }
-      tbody.innerHTML = data.contacts.map(c => {
+      $('#contactsResultsMeta').textContent = `${contacts.length} van ${totalCount}`;
+      tbody.innerHTML = contacts.map(c => {
         const optedOut = !!c.optOut;
-        const selectable = c.active && !optedOut;
-        const statusClass = optedOut ? 'optout' : (c.active ? 'active' : 'inactive');
-        const statusLabel = optedOut ? 'uitgeschreven' : (c.active ? 'actief' : 'inactief');
+        const bounced = !!c.bounced;
+        const selectable = c.active && !optedOut && !bounced;
+        const statusClass = bounced ? 'bounced' : (optedOut ? 'optout' : (c.active ? 'active' : 'inactive'));
+        const statusLabel = bounced ? 'bounced' : (optedOut ? 'uitgeschreven' : (c.active ? 'actief' : 'inactief'));
+        const blockedTitle = bounced ? 'E-mail bouncet — adres lijkt onbereikbaar'
+                          : (optedOut ? 'Uitgeschreven contact ontvangt geen mails meer'
+                          : 'Inactief contact');
         return `
         <tr>
           <td class="col-check">
-            <input type="checkbox" data-select="${escapeHtml(c.id)}" ${selectedContactIds.has(c.id) ? 'checked' : ''} ${selectable ? '' : 'disabled title="' + (optedOut ? 'Uitgeschreven contact ontvangt geen mails meer' : 'Inactief contact') + '"'} />
+            <input type="checkbox" data-select="${escapeHtml(c.id)}" ${selectedContactIds.has(c.id) ? 'checked' : ''} ${selectable ? '' : 'disabled title="' + blockedTitle + '"'} />
           </td>
           <td>${escapeHtml(c.name || '—')}</td>
           <td>${escapeHtml(c.company || '—')}</td>
           <td>${escapeHtml(c.email)}</td>
           <td><input type="text" class="am-edit" data-am-edit="${escapeHtml(c.id)}" value="${escapeHtml(c.accountManager || '')}" placeholder="—" /></td>
+          <td><select class="interval-edit ${c.intervalDaysOverride ? 'overridden' : ''}" data-interval-edit="${escapeHtml(c.id)}">${intervalOptions(c.intervalDaysOverride)}</select></td>
           <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
           <td>
             <div class="row-actions">
-              ${optedOut
+              ${bounced
+                ? '<span class="meta" style="font-size:13px;">Adres onbereikbaar</span>'
+                : optedOut
                 ? '<span class="meta" style="font-size:13px;">Uitgeschreven</span>'
                 : `<button class="btn secondary small" data-genlink="${escapeHtml(c.id)}" ${c.active ? '' : 'disabled'}>Kopieer link</button>
                    <button class="btn secondary small" data-toggle="${c.id}" data-active="${c.active ? '1' : '0'}">
@@ -1072,6 +1321,24 @@
           if (cb.checked) selectedContactIds.add(id);
           else selectedContactIds.delete(id);
           updateBulkBar();
+        });
+      });
+
+      tbody.querySelectorAll('select.interval-edit').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const id = sel.dataset.intervalEdit;
+          const value = sel.value === '' ? null : Number(sel.value);
+          const r = await fetch('/api/contacts?id=' + encodeURIComponent(id), {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ intervalDaysOverride: value }),
+          });
+          if (r.ok) {
+            sel.classList.toggle('overridden', value != null);
+            toast('Interval bijgewerkt', 'success');
+          } else {
+            toast('Bijwerken mislukt', 'error');
+          }
         });
       });
 
@@ -1125,9 +1392,13 @@
               return;
             }
             const link = j.invitations[0].link;
-            const ok = await copyToClipboard(link);
             const name = j.invitations[0].contactName || j.invitations[0].contactEmail || 'contact';
-            toast(ok ? `Link voor ${name} gekopieerd` : 'Kopiëren mislukt — link: ' + link, ok ? 'success' : 'error');
+            const ok = await copyToClipboard(link);
+            if (ok) {
+              toast(`Link voor ${name} gekopieerd`, 'success');
+            } else {
+              showCopyModal(link, name);
+            }
             loadRounds();
           } finally {
             btn.disabled = false; btn.textContent = original;
@@ -1137,6 +1408,37 @@
 
       updateBulkBar();
     }
+
+    async function loadContacts() {
+      const res = await fetch('/api/contacts', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      allContactsCache = data.contacts || [];
+      populateContactFilters(allContactsCache);
+      const filtered = filterContacts(allContactsCache);
+      renderContactsTable(filtered);
+      if (!allContactsCache.length) {
+        selectedContactIds.clear();
+        updateBulkBar();
+      }
+    }
+
+    // Filter event handlers
+    ['#contactSearch', '#filterStatus', '#filterAM', '#filterCompany'].forEach(sel => {
+      const el = $(sel);
+      const evt = sel === '#contactSearch' ? 'input' : 'change';
+      el.addEventListener(evt, () => {
+        const filtered = filterContacts(allContactsCache);
+        renderContactsTable(filtered);
+      });
+    });
+    $('#filterResetBtn').addEventListener('click', () => {
+      $('#contactSearch').value = '';
+      $('#filterStatus').value = '';
+      $('#filterAM').value = '';
+      $('#filterCompany').value = '';
+      renderContactsTable(filterContacts(allContactsCache));
+    });
 
     $('#selectAll').addEventListener('change', (e) => {
       const checked = e.target.checked;
@@ -1217,7 +1519,6 @@
       e.target.value = '';
     });
 
-    // ============ Rondes-tab ============
     function renderInvitationItem(inv) {
       const who = [inv.contactName, inv.contactCompany].filter(Boolean).join(' — ') || inv.contactEmail || 'Onbekend';
       const status = inv.respondedAt ? 'responded' : (inv.sentAt ? 'sent' : 'pending');
@@ -1275,7 +1576,8 @@
           e.stopPropagation();
           const link = btn.dataset.copyLink;
           const ok = await copyToClipboard(link);
-          toast(ok ? 'Link gekopieerd' : 'Kopiëren mislukt', ok ? 'success' : 'error');
+          if (ok) toast('Link gekopieerd', 'success');
+          else showCopyModal(link, 'link');
         });
       });
     }
@@ -1296,13 +1598,39 @@
       }
     });
 
-    // ============ Instellingen-tab ============
+    function syncIntervalPresetFromValue() {
+      const days = Number($('#intervalDays').value) || 90;
+      const presetOptions = ['7', '14', '30', '90', '180', '365'];
+      const presetSelect = $('#intervalPreset');
+      const customInput = $('#intervalDays');
+      if (presetOptions.includes(String(days))) {
+        presetSelect.value = String(days);
+        customInput.style.display = 'none';
+      } else {
+        presetSelect.value = 'custom';
+        customInput.style.display = '';
+      }
+    }
+
+    $('#intervalPreset').addEventListener('change', () => {
+      const customInput = $('#intervalDays');
+      const val = $('#intervalPreset').value;
+      if (val === 'custom') {
+        customInput.style.display = '';
+        customInput.focus();
+      } else {
+        customInput.value = val;
+        customInput.style.display = 'none';
+      }
+    });
+
     async function loadSettings() {
       const res = await fetch('/api/settings', { credentials: 'same-origin' });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
       $('#autoEnabled').checked = !!data.settings.autoEnabled;
       $('#intervalDays').value = data.settings.intervalDays;
+      syncIntervalPresetFromValue();
       $('#reminderEnabled').checked = !!data.settings.reminderEnabled;
       $('#reminderAfterDays').value = data.settings.reminderAfterDays;
       $('#lastRoundAt').textContent = data.settings.lastRoundAt
@@ -1312,12 +1640,17 @@
 
     $('#settingsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      // Als preset geen "custom" is, neem die waarde over voor zekerheid
+      const preset = $('#intervalPreset').value;
+      const intervalDays = preset === 'custom'
+        ? Number($('#intervalDays').value)
+        : Number(preset);
       const r = await fetch('/api/settings', {
         method: 'PUT', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           autoEnabled: $('#autoEnabled').checked,
-          intervalDays: Number($('#intervalDays').value),
+          intervalDays,
           reminderEnabled: $('#reminderEnabled').checked,
           reminderAfterDays: Number($('#reminderAfterDays').value),
         }),
@@ -1333,11 +1666,151 @@
       window.location.href = '/admin/login';
     });
 
+    // ============ Audit log tab ============
+    const ACTION_LABELS = {
+      'admin.login.success': 'Login geslaagd',
+      'admin.login.failed': 'Login mislukt',
+      'admin.logout': 'Uitgelogd',
+      'contact.create': 'Contact toegevoegd',
+      'contact.update': 'Contact bijgewerkt',
+      'contact.activate': 'Contact geactiveerd',
+      'contact.deactivate': 'Contact gedeactiveerd',
+      'contact.account_manager': 'Account manager bijgewerkt',
+      'contact.optout': 'Contact uitgeschreven',
+      'contact.bounced': 'Contact bouncet',
+      'contact.import': 'Contacten geïmporteerd',
+      'round.start.bulk': 'Ronde gestart (alle actieve)',
+      'round.start.selection': 'Ronde gestart (selectie)',
+      'round.start.auto': 'Auto-ronde gestart',
+      'round.genlink': 'Survey-link gegenereerd',
+      'response.delete': 'Reactie verwijderd',
+      'response.exclude': 'Reactie uitgesloten',
+      'response.include': 'Reactie ingesloten',
+      'response.export': 'Reacties geëxporteerd',
+      'settings.update': 'Instellingen aangepast',
+      'reminders.sent': 'Reminders verstuurd',
+      'detractor.alert': 'Detractor-alert verstuurd',
+    };
+    const labelFor = (action) => ACTION_LABELS[action] || action;
+
+    function actorClass(actor) {
+      if (!actor) return 'unknown';
+      if (actor === 'system') return 'system';
+      if (actor === 'public') return 'public';
+      if (actor === 'unknown') return 'unknown';
+      return 'admin';
+    }
+
+    let allAuditLogs = [];
+    const AUDIT_PER_PAGE = 25;
+    let auditPage = 1;
+
+    async function loadAudit() {
+      const res = await fetch('/api/audit', { credentials: 'same-origin' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      allAuditLogs = data.logs || [];
+      populateAuditFilters();
+      auditPage = 1;
+      renderAuditTable();
+    }
+
+    function populateAuditFilters() {
+      const actors = Array.from(new Set(allAuditLogs.map(l => l.actor || 'unknown'))).sort();
+      const actions = Array.from(new Set(allAuditLogs.map(l => l.action))).sort();
+      $('#auditActorFilter').innerHTML = '<option value="">Alle</option>' +
+        actors.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+      $('#auditActionFilter').innerHTML = '<option value="">Alle</option>' +
+        actions.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(labelFor(a))}</option>`).join('');
+    }
+
+    function getFilteredAudit() {
+      const actor = $('#auditActorFilter').value;
+      const action = $('#auditActionFilter').value;
+      const fromVal = $('#auditFrom').value;
+      const toVal = $('#auditTo').value;
+      const from = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+      const to = toVal ? new Date(toVal + 'T23:59:59.999') : null;
+
+      return allAuditLogs.filter(l => {
+        if (actor && l.actor !== actor) return false;
+        if (action && l.action !== action) return false;
+        const t = new Date(l.timestamp);
+        if (from && t < from) return false;
+        if (to && t > to) return false;
+        return true;
+      });
+    }
+
+    function formatDetails(d) {
+      if (!d) return '';
+      if (typeof d === 'string') return escapeHtml(d);
+      try {
+        return Object.entries(d)
+          .map(([k, v]) => `<strong>${escapeHtml(k)}:</strong> ${escapeHtml(typeof v === 'object' ? JSON.stringify(v) : String(v))}`)
+          .join(' · ');
+      } catch { return escapeHtml(JSON.stringify(d)); }
+    }
+
+    function renderAuditTable() {
+      const filtered = getFilteredAudit();
+      const tbody = $('#auditTable tbody');
+      const paginationEl = $('#auditPagination');
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Geen logs voor deze filters.</td></tr>';
+        paginationEl.innerHTML = '';
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(filtered.length / AUDIT_PER_PAGE));
+      auditPage = Math.min(Math.max(1, auditPage), totalPages);
+      const start = (auditPage - 1) * AUDIT_PER_PAGE;
+      const pageItems = filtered.slice(start, start + AUDIT_PER_PAGE);
+
+      tbody.innerHTML = pageItems.map(l => `
+        <tr>
+          <td class="col-time">${escapeHtml(new Date(l.timestamp).toLocaleString('nl-NL'))}</td>
+          <td><span class="actor-pill ${actorClass(l.actor)}">${escapeHtml(l.actor || 'onbekend')}</span></td>
+          <td class="col-action">${escapeHtml(labelFor(l.action))}</td>
+          <td class="col-target">${escapeHtml(l.targetLabel || l.targetId || '—')}</td>
+          <td class="col-details">${formatDetails(l.details)}</td>
+        </tr>
+      `).join('');
+
+      if (totalPages > 1) {
+        paginationEl.innerHTML = `<div class="pagination">
+          <button class="btn secondary small" ${auditPage === 1 ? 'disabled' : ''} data-audit-prev>‹ Vorige</button>
+          <span class="pages">Pagina ${auditPage} van ${totalPages} <span class="meta">(${filtered.length} entries)</span></span>
+          <button class="btn secondary small" ${auditPage === totalPages ? 'disabled' : ''} data-audit-next>Volgende ›</button>
+        </div>`;
+        const prev = document.querySelector('[data-audit-prev]');
+        const next = document.querySelector('[data-audit-next]');
+        if (prev) prev.addEventListener('click', () => { auditPage--; renderAuditTable(); });
+        if (next) next.addEventListener('click', () => { auditPage++; renderAuditTable(); });
+      } else {
+        paginationEl.innerHTML = '';
+      }
+    }
+
+    ['#auditActorFilter', '#auditActionFilter', '#auditFrom', '#auditTo'].forEach(sel => {
+      $(sel).addEventListener('change', () => { auditPage = 1; renderAuditTable(); });
+    });
+    $('#auditResetBtn').addEventListener('click', () => {
+      $('#auditActorFilter').value = '';
+      $('#auditActionFilter').value = '';
+      $('#auditFrom').value = '';
+      $('#auditTo').value = '';
+      auditPage = 1;
+      renderAuditTable();
+    });
+
     function loadAll() {
       loadOverview();
       loadContacts();
       loadRounds();
       loadSettings();
+      loadAudit();
     }
     loadAll();
   </script>

@@ -7,6 +7,7 @@ const { id: newId } = require('../lib/ids');
 
 const QUESTION_LABELS = {
   q1_overall: 'Cijfer dienstverlening (1-10)',
+  q_low_reason: 'Belangrijkste reden voor lage score',
   q6_likes: 'Wat waardeer je het meest',
   q7_improve: 'Wat kan beter',
   q4_ai_opportunities: 'Kansen voor AI',
@@ -85,6 +86,7 @@ module.exports = async (req, res) => {
 
   const answers = {
     q1_overall: validateNumeric(body.q1_overall, 1, 10),
+    q_low_reason: clean(body.q_low_reason, 600),
     q6_likes: clean(body.q6_likes, 600),
     q7_improve: clean(body.q7_improve, 600),
     q4_ai_opportunities: clean(body.q4_ai_opportunities, 600),
@@ -93,12 +95,16 @@ module.exports = async (req, res) => {
     email: clean(body.email, 160),
   };
 
-  const requiredKeys = ['q1_overall'];
-  for (const k of requiredKeys) {
-    if (answers[k] == null) {
-      res.statusCode = 400;
-      return res.end(JSON.stringify({ error: `Ongeldig of ontbrekend veld: ${k}` }));
-    }
+  // Verplichte velden
+  if (answers.q1_overall == null) {
+    res.statusCode = 400;
+    return res.end(JSON.stringify({ error: 'Ongeldig of ontbrekend veld: q1_overall' }));
+  }
+
+  // Conditioneel verplicht: bij score ≤ 6 moet de vervolgvraag ingevuld zijn
+  if (answers.q1_overall <= 6 && (!answers.q_low_reason || answers.q_low_reason.trim().length === 0)) {
+    res.statusCode = 400;
+    return res.end(JSON.stringify({ error: 'Bij een score van 6 of lager is de vervolgvraag verplicht.' }));
   }
 
   let invitation = null;
@@ -107,7 +113,6 @@ module.exports = async (req, res) => {
   if (body.token) {
     invitation = await roundsLib.getInvitationByToken(String(body.token));
     if (invitation) {
-      // Token-gebaseerde indiening: weiger als verlopen of al beantwoord.
       if (invitation.respondedAt) {
         res.statusCode = 410;
         return res.end(JSON.stringify({ error: 'Deze survey is al ingevuld.' }));

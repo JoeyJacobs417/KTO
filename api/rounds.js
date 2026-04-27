@@ -2,6 +2,7 @@ const { isAuthenticated } = require('../lib/auth');
 const rounds = require('../lib/rounds');
 const contacts = require('../lib/contacts');
 const campaign = require('../lib/campaign');
+const audit = require('../lib/audit');
 
 function baseUrl() {
   if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, '');
@@ -72,21 +73,43 @@ module.exports = async (req, res) => {
 
   if (req.method === 'POST') {
     let body = {};
+    try { body = await readJson(req); } catch {}
     try {
-      body = await readJson(req);
-    } catch {
-      // ongeldige JSON → behandel als geen body
-    }
-    try {
+      const contactIds = Array.isArray(body.contactIds) ? body.contactIds : null;
+      const sendEmail = body.sendEmail !== false;
       const result = await campaign.startRound({
         triggeredBy: 'manual',
-        contactIds: Array.isArray(body.contactIds) ? body.contactIds : null,
-        sendEmail: body.sendEmail !== false,
+        contactIds,
+        sendEmail,
       });
       if (!result.round) {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: result.error || 'Kan ronde niet starten.' }));
       }
+
+      // Audit-actie kiezen op basis van type
+      let action = 'round.start.bulk';
+      if (contactIds && contactIds.length === 1 && !sendEmail) action = 'round.genlink';
+      else if (contactIds && contactIds.length >= 1) action = 'round.start.selection';
+
+      try {
+        await audit.log({
+          actor: audit.getActor(req),
+          ip: audit.getIp(req),
+          action,
+          targetType: 'round',
+          targetId: result.round.id,
+          targetLabel: `Ronde ${new Date(result.round.createdAt).toLocaleString('nl-NL')}`,
+          details: {
+            total: result.total,
+            sent: result.sent,
+            failed: result.failed,
+            sendEmail,
+            contactCount: result.total,
+          },
+        });
+      } catch (e) { console.error('Audit error:', e); }
+
       res.statusCode = 200;
       return res.end(JSON.stringify({ ok: true, ...result }));
     } catch (e) {
