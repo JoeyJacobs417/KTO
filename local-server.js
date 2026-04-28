@@ -23,6 +23,7 @@ const responses = require('./api/responses');
 const contacts = require('./api/contacts');
 const rounds = require('./api/rounds');
 const settings = require('./api/settings');
+const emailTemplatesApi = require('./api/email-templates');
 const cron = require('./api/cron');
 const invitation = require('./api/invitation');
 const optout = require('./api/optout');
@@ -67,6 +68,7 @@ const server = http.createServer(async (req, res) => {
     if (req.url.startsWith('/api/contacts')) return contacts(req, res);
     if (req.url.startsWith('/api/rounds')) return rounds(req, res);
     if (req.url.startsWith('/api/settings')) return settings(req, res);
+    if (req.url.startsWith('/api/email-templates')) return emailTemplatesApi(req, res);
     if (req.url.startsWith('/api/cron')) return cron(req, res);
     if (req.url.startsWith('/api/invitation')) return invitation(req, res);
     if (req.url.startsWith('/api/optout')) return optout(req, res);

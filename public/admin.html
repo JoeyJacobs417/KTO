@@ -248,6 +248,7 @@
       <button class="tab-btn" data-tab="contacts" id="tabBtnContacts">Klanten</button>
       <button class="tab-btn" data-tab="rounds">Rondes</button>
       <button class="tab-btn" data-tab="settings">Instellingen</button>
+      <button class="tab-btn" data-tab="emails">E-mails</button>
       <button class="tab-btn" data-tab="audit">Audit log</button>
     </div>
 
@@ -442,31 +443,10 @@
       </form>
     </section>
 
-    <section class="tab-pane" id="tab-audit">
-      <div class="section-head">
-        <h2>Audit log</h2>
-        <div class="actions-right">
-          <a class="btn secondary small" id="auditExportBtn" href="/api/audit?format=csv" download>Exporteer naar Excel</a>
-        </div>
-      </div>
-      <p class="meta" style="margin-top:0;">Alle admin-acties, automatische systeem-events en publieke acties worden hier gelogd. Maximaal 5000 entries.</p>
-      <div class="audit-filters">
-        <label>Gebruiker</label>
-        <select id="auditActorFilter"><option value="">Alle</option></select>
-        <label>Actie</label>
-        <select id="auditActionFilter"><option value="">Alle</option></select>
-        <label>Van</label>
-        <input type="date" id="auditFrom" />
-        <label>tot</label>
-        <input type="date" id="auditTo" />
-        <span class="spacer"></span>
-        <button class="btn secondary small" id="auditResetBtn">Reset filters</button>
-      </div>
-      <table class="data audit-table" id="auditTable">
-        <thead><tr><th>Tijdstip</th><th>Gebruiker</th><th>Actie</th><th>Target</th><th>Details</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div id="auditPagination"></div>
+    <section class="tab-pane" id="tab-emails">
+      <div class="section-head"><h2 id="emailsHeading">E-mails — Klanten</h2></div>
+      <p class="meta" style="margin-top:0;">Pas onderwerp en tekst aan van de mails die we versturen. Variabelen worden bij verzenden automatisch ingevuld: <code>{{firstName}}</code> (voornaam), <code>{{name}}</code> (volledige naam), <code>{{greeting}}</code> (begroeting "Hoi Voornaam,"), <code>{{link}}</code> (de unieke survey-link — alleen voor uitnodiging en herinnering). Een opt-out-voettekst wordt automatisch onderaan toegevoegd in uitnodigingen en herinneringen.</p>
+      <div id="emailsContainer"></div>
     </section>
   </main>
 
@@ -1171,6 +1151,82 @@
       else toast(j.error || 'Kan niet opslaan', 'error');
     });
 
+    // ============ E-mail templates ============
+    let emailTemplatesCache = null;
+    const EMAIL_KIND_TITLES = { invite: 'Uitnodiging', reminder: 'Herinnering', confirmation: 'Bevestiging na invullen' };
+    const EMAIL_KINDS_ORDER = ['invite', 'reminder', 'confirmation'];
+
+    async function loadEmailTemplates() {
+      try {
+        const res = await fetch('/api/email-templates', { credentials: 'same-origin' });
+        if (res.status === 401) { window.location.href = '/admin/login'; return; }
+        if (!res.ok) return;
+        const data = await res.json();
+        emailTemplatesCache = data.templates || null;
+        renderEmailTemplates();
+      } catch {}
+    }
+
+    function renderEmailTemplates() {
+      const heading = $('#emailsHeading');
+      if (heading) heading.textContent = currentType === 'medewerker' ? 'E-mails — Medewerkers' : 'E-mails — Klanten';
+      const container = $('#emailsContainer');
+      if (!container) return;
+      if (!emailTemplatesCache) { container.innerHTML = '<p class="meta">Laden…</p>'; return; }
+      const t = emailTemplatesCache[currentType] || {};
+      container.innerHTML = EMAIL_KINDS_ORDER.map(kind => {
+        const tpl = t[kind] || { subject: '', body: '' };
+        const showsLink = kind !== 'confirmation';
+        const varsHint = showsLink
+          ? 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code> · <code>{{link}}</code>'
+          : 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code>';
+        return `
+          <div class="card" style="margin-bottom:20px;">
+            <h3 style="margin-top:0;">${EMAIL_KIND_TITLES[kind]}</h3>
+            <form class="email-form settings-form" data-kind="${kind}">
+              <div class="field">
+                <label>Onderwerp</label>
+                <input type="text" name="subject" maxlength="300" value="${escapeHtml(tpl.subject || '')}" />
+              </div>
+              <div class="field">
+                <label>Tekst</label>
+                <textarea name="body" rows="14" maxlength="20000" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;">${escapeHtml(tpl.body || '')}</textarea>
+                <div class="meta" style="margin-top:6px;">${varsHint}</div>
+              </div>
+              <button type="submit" class="btn small">Opslaan</button>
+            </form>
+          </div>`;
+      }).join('');
+      container.querySelectorAll('.email-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const kind = form.dataset.kind;
+          const subject = form.querySelector('input[name="subject"]').value;
+          const body = form.querySelector('textarea[name="body"]').value;
+          const btn = form.querySelector('button[type="submit"]');
+          const originalText = btn.textContent;
+          btn.disabled = true; btn.textContent = 'Opslaan…';
+          try {
+            const r = await fetch('/api/email-templates', {
+              method: 'PUT',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: currentType, kind, subject, body }),
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(j.error || 'Opslaan mislukt');
+            if (!emailTemplatesCache[currentType]) emailTemplatesCache[currentType] = {};
+            emailTemplatesCache[currentType][kind] = { subject, body };
+            toast(`${EMAIL_KIND_TITLES[kind]} opgeslagen`, 'success');
+          } catch (err) {
+            toast(err.message || 'Opslaan mislukt', 'error');
+          } finally {
+            btn.disabled = false; btn.textContent = originalText;
+          }
+        });
+      });
+    }
+
     // ============ Audit log ============
     const ACTION_LABELS = {
       'admin.login.success':'Login geslaagd', 'admin.login.failed':'Login mislukt', 'admin.logout':'Uitgelogd',
@@ -1184,6 +1240,7 @@
       'response.include':'Reactie ingesloten', 'response.export':'Reacties geëxporteerd',
       'settings.update':'Instellingen aangepast', 'reminders.sent':'Reminders verstuurd',
       'detractor.alert':'Detractor-alert verstuurd',
+      'email_template.update':'Mail-template aangepast',
     };
     const labelFor = (a) => ACTION_LABELS[a] || a;
     function actorClass(a) { if (!a) return 'unknown'; if (a==='system') return 'system'; if (a==='public') return 'public'; if (a==='unknown') return 'unknown'; return 'admin'; }
@@ -1252,6 +1309,7 @@
       loadContacts();
       loadRounds();
       loadSettings();
+      if (emailTemplatesCache) renderEmailTemplates(); else loadEmailTemplates();
     }
 
     // Initial load
