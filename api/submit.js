@@ -3,6 +3,7 @@ const storage = require('../lib/storage');
 const roundsLib = require('../lib/rounds');
 const contactsLib = require('../lib/contacts');
 const campaign = require('../lib/campaign');
+const settingsLib = require('../lib/settings');
 const { id: newId } = require('../lib/ids');
 
 function readJson(req) {
@@ -132,15 +133,15 @@ module.exports = async (req, res) => {
   } catch (e) { console.error('Storage error:', e); }
 
   const apiKey = process.env.RESEND_API_KEY;
-  const cfg = campaign.configFor(type);
-  const to = cfg.summaryRecipient;
   const from = process.env.MAIL_FROM || 'onboarding@resend.dev';
+  const s = await settingsLib.get(type);
+  const submissionRecipients = Array.isArray(s.submissionRecipients) ? s.submissionRecipients : [];
 
-  if (apiKey) {
+  if (apiKey && submissionRecipients.length > 0) {
     try {
       const resend = new Resend(apiKey);
       await resend.emails.send({
-        from, to,
+        from, to: submissionRecipients,
         subject: `Nieuwe ${type === 'medewerker' ? 'medewerker' : 'klant'}-survey-inzending${answers.name ? ` — ${answers.name}` : ''}${answers.company ? ` (${answers.company})` : ''}`,
         html: buildEmailHtml(entry, type),
         text: buildEmailText(entry, type),

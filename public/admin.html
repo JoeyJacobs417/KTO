@@ -439,6 +439,18 @@
           <input type="number" id="reminderAfterDays" min="1" max="60" step="1" style="max-width:160px;" />
           <div class="meta" style="margin-top:6px;">Standaard 3 dagen. Reminders worden door de dagelijkse cron-taak verstuurd.</div>
         </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+        <h3 style="margin:0 0 12px;">Notificaties bij ingevulde surveys</h3>
+        <div class="field">
+          <label for="submissionRecipients">Wie ontvangt een mail bij iedere ingevulde survey?</label>
+          <textarea id="submissionRecipients" rows="3" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;" placeholder="een e-mailadres per regel"></textarea>
+          <div class="meta" style="margin-top:6px;">Eén e-mailadres per regel. Laat leeg om geen notificatie te versturen.</div>
+        </div>
+        <div class="field">
+          <label for="detractorRecipients">Wie ontvangt een alert bij een lage score (≤ 6)?</label>
+          <textarea id="detractorRecipients" rows="3" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;" placeholder="een e-mailadres per regel"></textarea>
+          <div class="meta" style="margin-top:6px;">Eén e-mailadres per regel. Wordt extra verstuurd bovenop de notificatie hierboven.</div>
+        </div>
         <button type="submit" class="btn small">Opslaan</button>
       </form>
     </section>
@@ -1136,6 +1148,11 @@
       $('#reminderEnabled').checked = !!data.settings.reminderEnabled;
       $('#reminderAfterDays').value = data.settings.reminderAfterDays;
       $('#lastRoundAt').textContent = data.settings.lastRoundAt ? new Date(data.settings.lastRoundAt).toLocaleString('nl-NL') : 'Nog geen ronde verstuurd';
+      $('#submissionRecipients').value = (data.settings.submissionRecipients || []).join('\n');
+      $('#detractorRecipients').value = (data.settings.detractorRecipients || []).join('\n');
+    }
+    function parseRecipientLines(text) {
+      return String(text || '').split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
     }
     $('#settingsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1144,11 +1161,18 @@
       const r = await fetch(`/api/settings?type=${currentType}`, { method:'PUT', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
         autoEnabled: $('#autoEnabled').checked, intervalDays,
         reminderEnabled: $('#reminderEnabled').checked,
-        reminderAfterDays: Number($('#reminderAfterDays').value)
+        reminderAfterDays: Number($('#reminderAfterDays').value),
+        submissionRecipients: parseRecipientLines($('#submissionRecipients').value),
+        detractorRecipients: parseRecipientLines($('#detractorRecipients').value),
       }) });
       const j = await r.json();
-      if (r.ok) toast('Instellingen opgeslagen', 'success');
-      else toast(j.error || 'Kan niet opslaan', 'error');
+      if (r.ok) {
+        if (j.settings) {
+          $('#submissionRecipients').value = (j.settings.submissionRecipients || []).join('\n');
+          $('#detractorRecipients').value = (j.settings.detractorRecipients || []).join('\n');
+        }
+        toast('Instellingen opgeslagen', 'success');
+      } else toast(j.error || 'Kan niet opslaan', 'error');
     });
 
     // ============ E-mail templates ============
