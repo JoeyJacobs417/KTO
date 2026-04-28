@@ -40,10 +40,10 @@
     table.data tr:last-child td { border-bottom: none; }
 
     .inline-form { display: grid; gap: 10px; align-items: end; margin-bottom: 16px; }
-    .inline-form.klant-form { grid-template-columns: 1fr 1fr 1fr 1fr auto; }
-    .inline-form.medewerker-form { grid-template-columns: 1fr 1fr 1fr auto; }
+    .inline-form.klant-form { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .inline-form.medewerker-form { grid-template-columns: 1fr 1fr 1fr; }
     .inline-form input { padding: 10px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; }
-    .inline-form button { padding: 10px 16px; }
+    .inline-form button { padding: 10px 16px; grid-column: 1 / -1; justify-self: end; }
 
     .btn.secondary { background: var(--bg-elev) !important; border: 1px solid var(--border) !important; color: var(--text) !important; box-shadow: none !important; font-weight: 500; }
     .btn.secondary:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(124, 92, 255, 0.04) !important; }
@@ -218,9 +218,9 @@
     .copy-modal textarea { width: 100%; min-height: 80px; padding: 10px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: ui-monospace, monospace; font-size: 13px; resize: vertical; }
     .copy-modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
-    .hide-when-medewerker { display: none; }
-    body[data-type="klant"] .hide-when-medewerker { display: revert; }
-    body[data-type="klant"] .show-only-when-medewerker { display: none; }
+    body[data-type="medewerker"] .hide-when-medewerker { display: none !important; }
+    .show-only-when-medewerker { display: none; }
+    body[data-type="medewerker"] .show-only-when-medewerker { display: revert; }
   </style>
 </head>
 <body data-type="klant">
