@@ -437,18 +437,7 @@
         <div class="field">
           <label for="reminderAfterDays">Herinnering versturen na (dagen)</label>
           <input type="number" id="reminderAfterDays" min="1" max="60" step="1" style="max-width:160px;" />
-          <div class="meta" style="margin-top:6px;">Standaard 3 dagen. Het interval wordt opnieuw geteld vanaf de laatste herinnering.</div>
-        </div>
-        <div class="field">
-          <label for="reminderMaxCount">Aantal herinneringen</label>
-          <select id="reminderMaxCount" style="max-width:160px;">
-            <option value="1">1 herinnering</option>
-            <option value="2">2 herinneringen</option>
-            <option value="3">3 herinneringen</option>
-            <option value="4">4 herinneringen</option>
-            <option value="5">5 herinneringen</option>
-          </select>
-          <div class="meta" style="margin-top:6px;">Maximaal aantal reminders dat per uitnodiging wordt verstuurd. Daarna stopt de scheduler vanzelf.</div>
+          <div class="meta" style="margin-top:6px;">Standaard 3 dagen. Reminders worden door de dagelijkse cron-taak verstuurd.</div>
         </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
         <h3 style="margin:0 0 12px;">Notificaties bij ingevulde surveys</h3>
@@ -1159,7 +1148,6 @@
       syncIntervalPresetFromValue();
       $('#reminderEnabled').checked = !!data.settings.reminderEnabled;
       $('#reminderAfterDays').value = data.settings.reminderAfterDays;
-      $('#reminderMaxCount').value = String(data.settings.reminderMaxCount || 1);
       $('#lastRoundAt').textContent = data.settings.lastRoundAt ? new Date(data.settings.lastRoundAt).toLocaleString('nl-NL') : 'Nog geen ronde verstuurd';
       $('#submissionRecipients').value = (data.settings.submissionRecipients || []).join('\n');
       $('#detractorRecipients').value = (data.settings.detractorRecipients || []).join('\n');
@@ -1175,7 +1163,6 @@
         autoEnabled: $('#autoEnabled').checked, intervalDays,
         reminderEnabled: $('#reminderEnabled').checked,
         reminderAfterDays: Number($('#reminderAfterDays').value),
-        reminderMaxCount: Number($('#reminderMaxCount').value),
         submissionRecipients: parseRecipientLines($('#submissionRecipients').value),
         detractorRecipients: parseRecipientLines($('#detractorRecipients').value),
       }) });
