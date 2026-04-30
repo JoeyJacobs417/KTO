@@ -29,6 +29,7 @@ module.exports = async (req, res) => {
       const body = await readJson(req);
       const type = body.type;
       const kind = body.kind;
+      const lang = body.lang || body.language || 'nl';
       if (!templates.TYPES.includes(type)) {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: 'Ongeldig type' }));
@@ -37,16 +38,21 @@ module.exports = async (req, res) => {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: 'Ongeldige soort' }));
       }
+      const validLangs = templates.LANGS_FOR_TYPE[type] || ['nl'];
+      if (!validLangs.includes(lang)) {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ error: 'Ongeldige taal voor dit type' }));
+      }
       const subject = String(body.subject == null ? '' : body.subject).slice(0, 300);
       const bodyText = String(body.body == null ? '' : body.body).slice(0, 20000);
-      const saved = await templates.setOne(type, kind, { subject, body: bodyText });
+      const saved = await templates.setOne(type, kind, lang, { subject, body: bodyText });
       try {
         await audit.log({
           actor: audit.getActor(req), ip: audit.getIp(req),
           action: 'email_template.update',
           targetType: 'email_template',
-          targetLabel: `${type} — ${kind}`,
-          details: { type, kind },
+          targetLabel: `${type} — ${kind} (${lang})`,
+          details: { type, kind, lang },
         });
       } catch {}
       res.statusCode = 200;

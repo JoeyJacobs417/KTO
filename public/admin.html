@@ -303,13 +303,17 @@
         <input type="text" name="company" id="companyInput" placeholder="Bedrijf" />
         <input type="email" name="email" placeholder="E-mail (verplicht)" required />
         <input type="text" name="accountManager" id="amInput" placeholder="Account manager" class="hide-when-medewerker" />
+        <select name="language" id="languageInput" class="hide-when-medewerker" style="padding:10px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px;">
+          <option value="nl">Nederlands</option>
+          <option value="en">English</option>
+        </select>
         <button type="submit" class="btn small">Toevoegen</button>
       </form>
 
       <label class="csv-drop" for="csvFile">
         <input type="file" id="csvFile" accept=".csv,text/csv" />
         <div><strong>CSV-bestand importeren</strong></div>
-        <div style="font-size:13px;margin-top:4px;" id="csvHint">Kolommen: name, company, email, accountmanager (of NL-varianten)</div>
+        <div style="font-size:13px;margin-top:4px;" id="csvHint">Kolommen: name, company, email, accountmanager, language (taal = nl/en, default nl)</div>
       </label>
       <div id="csvResult" class="meta" style="margin-bottom:12px;"></div>
 
@@ -344,6 +348,7 @@
             <th id="colCompany">Bedrijf</th>
             <th>E-mail</th>
             <th class="hide-when-medewerker">Account manager</th>
+            <th class="hide-when-medewerker">Taal</th>
             <th>Interval</th>
             <th>Status</th>
             <th></th>
@@ -437,7 +442,18 @@
         <div class="field">
           <label for="reminderAfterDays">Herinnering versturen na (dagen)</label>
           <input type="number" id="reminderAfterDays" min="1" max="60" step="1" style="max-width:160px;" />
-          <div class="meta" style="margin-top:6px;">Standaard 3 dagen. Reminders worden door de dagelijkse cron-taak verstuurd.</div>
+          <div class="meta" style="margin-top:6px;">Standaard 3 dagen. Het interval wordt opnieuw geteld vanaf de laatste herinnering.</div>
+        </div>
+        <div class="field">
+          <label for="reminderMaxCount">Aantal herinneringen</label>
+          <select id="reminderMaxCount" style="max-width:160px;">
+            <option value="1">1 herinnering</option>
+            <option value="2">2 herinneringen</option>
+            <option value="3">3 herinneringen</option>
+            <option value="4">4 herinneringen</option>
+            <option value="5">5 herinneringen</option>
+          </select>
+          <div class="meta" style="margin-top:6px;">Maximaal aantal reminders dat per uitnodiging wordt verstuurd. Daarna stopt de scheduler vanzelf.</div>
         </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
         <h3 style="margin:0 0 12px;">Notificaties bij ingevulde surveys</h3>
@@ -483,7 +499,7 @@
       $('#colCompany').textContent = isMed ? 'Afdeling' : 'Bedrijf';
       $('#csvHint').textContent = isMed
         ? 'Kolommen: name, company, email (company = afdeling)'
-        : 'Kolommen: name, company, email, accountmanager (of NL-varianten)';
+        : 'Kolommen: name, company, email, accountmanager, language (taal = nl/en, default nl)';
       $('#exportBtn').href = `/api/responses?format=csv&type=${currentType}`;
       $('#addContactForm').classList.toggle('klant-form', !isMed);
       $('#addContactForm').classList.toggle('medewerker-form', isMed);
@@ -934,7 +950,7 @@
       const total = allContactsCache.length;
       const isMed = currentType === 'medewerker';
       if (!contacts.length) {
-        tbody.innerHTML = `<tr><td colspan="${isMed?7:8}" style="text-align:center;color:var(--text-muted);padding:24px;">${total===0?'Nog geen contacten.':'Geen contacten voor deze filters.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isMed?7:9}" style="text-align:center;color:var(--text-muted);padding:24px;">${total===0?'Nog geen contacten.':'Geen contacten voor deze filters.'}</td></tr>`;
         $('#contactsResultsMeta').textContent = total > 0 ? `0 van ${total}` : '';
         return;
       }
@@ -946,17 +962,32 @@
         const sl = bounced ? 'bounced' : (optedOut ? 'uitgeschreven' : (c.active ? 'actief' : 'inactief'));
         const blocked = bounced ? 'E-mail bouncet' : (optedOut ? 'Uitgeschreven' : 'Inactief');
         const amCol = isMed ? '' : `<td><input type="text" class="am-edit" data-am-edit="${escapeHtml(c.id)}" value="${escapeHtml(c.accountManager||'')}" placeholder="—" /></td>`;
+        const lang = (c.language === 'en') ? 'en' : 'nl';
+        const langCol = isMed ? '' : `<td><select class="lang-edit" data-lang-edit="${escapeHtml(c.id)}"><option value="nl" ${lang==='nl'?'selected':''}>Nederlands</option><option value="en" ${lang==='en'?'selected':''}>English</option></select></td>`;
         return `<tr>
           <td class="col-check"><input type="checkbox" data-select="${escapeHtml(c.id)}" ${selectedContactIds.has(c.id)?'checked':''} ${selectable?'':'disabled title="'+blocked+'"'} /></td>
           <td>${escapeHtml(c.name||'—')}</td>
           <td>${escapeHtml(c.company||'—')}</td>
           <td>${escapeHtml(c.email)}</td>
           ${amCol}
+          ${langCol}
           <td><select class="interval-edit ${c.intervalDaysOverride?'overridden':''}" data-interval-edit="${escapeHtml(c.id)}">${intervalOptions(c.intervalDaysOverride)}</select></td>
           <td><span class="status-pill ${sc}">${sl}</span></td>
           <td><div class="row-actions">${(bounced||optedOut)?`<span class="meta" style="font-size:13px;">${bounced?'Adres onbereikbaar':'Uitgeschreven'}</span>`:`<button class="btn secondary small" data-genlink="${escapeHtml(c.id)}" ${c.active?'':'disabled'}>Kopieer link</button><button class="btn secondary small" data-toggle="${c.id}" data-active="${c.active?'1':'0'}">${c.active?'Deactiveren':'Activeren'}</button>`}</div></td>
         </tr>`;
       }).join('');
+
+      tbody.querySelectorAll('select.lang-edit').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const id = sel.dataset.langEdit;
+          const r = await fetch('/api/contacts?id=' + encodeURIComponent(id), {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: sel.value }),
+          });
+          if (r.ok) toast('Taal bijgewerkt', 'success'); else toast('Bijwerken mislukt', 'error');
+        });
+      });
 
       tbody.querySelectorAll('input[type="checkbox"][data-select]').forEach(cb => {
         cb.addEventListener('change', () => { const id = cb.dataset.select; if (cb.checked) selectedContactIds.add(id); else selectedContactIds.delete(id); updateBulkBar(); });
@@ -1148,6 +1179,7 @@
       syncIntervalPresetFromValue();
       $('#reminderEnabled').checked = !!data.settings.reminderEnabled;
       $('#reminderAfterDays').value = data.settings.reminderAfterDays;
+      $('#reminderMaxCount').value = String(data.settings.reminderMaxCount || 1);
       $('#lastRoundAt').textContent = data.settings.lastRoundAt ? new Date(data.settings.lastRoundAt).toLocaleString('nl-NL') : 'Nog geen ronde verstuurd';
       $('#submissionRecipients').value = (data.settings.submissionRecipients || []).join('\n');
       $('#detractorRecipients').value = (data.settings.detractorRecipients || []).join('\n');
@@ -1163,6 +1195,7 @@
         autoEnabled: $('#autoEnabled').checked, intervalDays,
         reminderEnabled: $('#reminderEnabled').checked,
         reminderAfterDays: Number($('#reminderAfterDays').value),
+        reminderMaxCount: Number($('#reminderMaxCount').value),
         submissionRecipients: parseRecipientLines($('#submissionRecipients').value),
         detractorRecipients: parseRecipientLines($('#detractorRecipients').value),
       }) });
@@ -1192,6 +1225,9 @@
       } catch {}
     }
 
+    const EMAIL_LANGS = { klant: ['nl', 'en'], medewerker: ['nl'] };
+    const LANG_LABELS = { nl: 'Nederlands', en: 'English' };
+
     function renderEmailTemplates() {
       const heading = $('#emailsHeading');
       if (heading) heading.textContent = currentType === 'medewerker' ? 'E-mails — Medewerkers' : 'E-mails — Klanten';
@@ -1199,33 +1235,40 @@
       if (!container) return;
       if (!emailTemplatesCache) { container.innerHTML = '<p class="meta">Laden…</p>'; return; }
       const t = emailTemplatesCache[currentType] || {};
-      container.innerHTML = EMAIL_KINDS_ORDER.map(kind => {
-        const tpl = t[kind] || { subject: '', body: '' };
-        const showsLink = kind !== 'confirmation';
-        const varsHint = showsLink
-          ? 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code> · <code>{{link}}</code>'
-          : 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code>';
-        return `
-          <div class="card" style="margin-bottom:20px;">
-            <h3 style="margin-top:0;">${EMAIL_KIND_TITLES[kind]}</h3>
-            <form class="email-form settings-form" data-kind="${kind}">
-              <div class="field">
-                <label>Onderwerp</label>
-                <input type="text" name="subject" maxlength="300" value="${escapeHtml(tpl.subject || '')}" />
-              </div>
-              <div class="field">
-                <label>Tekst</label>
-                <textarea name="body" rows="14" maxlength="20000" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;">${escapeHtml(tpl.body || '')}</textarea>
-                <div class="meta" style="margin-top:6px;">${varsHint}</div>
-              </div>
-              <button type="submit" class="btn small">Opslaan</button>
-            </form>
-          </div>`;
-      }).join('');
+      const langs = EMAIL_LANGS[currentType] || ['nl'];
+      const cards = [];
+      for (const kind of EMAIL_KINDS_ORDER) {
+        for (const lang of langs) {
+          const tpl = (t[kind] && t[kind][lang]) || { subject: '', body: '' };
+          const showsLink = kind !== 'confirmation';
+          const varsHint = showsLink
+            ? 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code> · <code>{{link}}</code>'
+            : 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code>';
+          const langSuffix = langs.length > 1 ? ` <span class="meta" style="font-weight:400;font-size:14px;">(${LANG_LABELS[lang]})</span>` : '';
+          cards.push(`
+            <div class="card" style="margin-bottom:20px;">
+              <h3 style="margin-top:0;">${EMAIL_KIND_TITLES[kind]}${langSuffix}</h3>
+              <form class="email-form settings-form" data-kind="${kind}" data-lang="${lang}">
+                <div class="field">
+                  <label>Onderwerp</label>
+                  <input type="text" name="subject" maxlength="300" value="${escapeHtml(tpl.subject || '')}" />
+                </div>
+                <div class="field">
+                  <label>Tekst</label>
+                  <textarea name="body" rows="14" maxlength="20000" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;">${escapeHtml(tpl.body || '')}</textarea>
+                  <div class="meta" style="margin-top:6px;">${varsHint}</div>
+                </div>
+                <button type="submit" class="btn small">Opslaan</button>
+              </form>
+            </div>`);
+        }
+      }
+      container.innerHTML = cards.join('');
       container.querySelectorAll('.email-form').forEach(form => {
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
           const kind = form.dataset.kind;
+          const lang = form.dataset.lang;
           const subject = form.querySelector('input[name="subject"]').value;
           const body = form.querySelector('textarea[name="body"]').value;
           const btn = form.querySelector('button[type="submit"]');
@@ -1236,13 +1279,15 @@
               method: 'PUT',
               credentials: 'same-origin',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: currentType, kind, subject, body }),
+              body: JSON.stringify({ type: currentType, kind, lang, subject, body }),
             });
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.error || 'Opslaan mislukt');
             if (!emailTemplatesCache[currentType]) emailTemplatesCache[currentType] = {};
-            emailTemplatesCache[currentType][kind] = { subject, body };
-            toast(`${EMAIL_KIND_TITLES[kind]} opgeslagen`, 'success');
+            if (!emailTemplatesCache[currentType][kind]) emailTemplatesCache[currentType][kind] = {};
+            emailTemplatesCache[currentType][kind][lang] = { subject, body };
+            const suffix = (EMAIL_LANGS[currentType] || ['nl']).length > 1 ? ` (${LANG_LABELS[lang]})` : '';
+            toast(`${EMAIL_KIND_TITLES[kind]}${suffix} opgeslagen`, 'success');
           } catch (err) {
             toast(err.message || 'Opslaan mislukt', 'error');
           } finally {

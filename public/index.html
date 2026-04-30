@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Klanttevredenheidsonderzoek / Customer Satisfaction Survey</title>
+  <title>Klanttevredenheidsonderzoek</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -18,66 +18,75 @@
     @keyframes revealFollowup { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     .followup .label { color: var(--text); }
     .followup .hint.required { color: #ef4444; font-weight: 600; }
-    .lang-en { display: block; color: #6b7280; font-weight: 400; font-size: 0.9em; margin-top: 4px; }
-    h1 .lang-en { font-size: 0.55em; margin-top: 6px; font-weight: 500; }
-    .lead .lang-en { font-size: 1em; margin-top: 4px; }
-    .label .lang-en { margin-top: 6px; }
-    .meta .lang-en { margin-top: 2px; }
+    /* Taal-toggle: standaard NL, klap om naar EN als body lang=en */
+    [data-i18n="en"] { display: none; }
+    body[data-lang="en"] [data-i18n="nl"] { display: none; }
+    body[data-lang="en"] [data-i18n="en"] { display: revert; }
   </style>
 </head>
-<body>
+<body data-lang="nl">
   <main class="container" id="mainContainer">
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
-      <div class="name">Klanttevredenheidsonderzoek <span class="lang-en">Customer Satisfaction Survey</span></div>
+      <div class="name" data-i18n="nl">Klanttevredenheidsonderzoek</div>
+      <div class="name" data-i18n="en">Customer Satisfaction Survey</div>
     </div>
 
     <div id="statusPage" class="hidden status-page">
       <div class="status-icon" id="statusIcon"></div>
       <h1 id="statusTitle"></h1>
       <p class="lead" id="statusMessage"></p>
-      <p class="lead lang-en" id="statusMessageEn"></p>
     </div>
 
     <div id="formContainer">
-      <h1 id="surveyTitle">We horen graag van je<span class="lang-en" id="surveyTitleEn">We'd love to hear from you</span></h1>
-      <p class="lead">Jouw feedback helpt ons onze dienstverlening te verbeteren. Dit kost je minder dan 3 minuten.<span class="lang-en">Your feedback helps us improve our service. It will take less than 3 minutes.</span></p>
+      <h1 id="surveyTitle">
+        <span data-i18n="nl">We horen graag van je</span>
+        <span data-i18n="en">We'd love to hear from you</span>
+      </h1>
+      <p class="lead" data-i18n="nl">Jouw feedback helpt ons onze dienstverlening te verbeteren. Dit kost je minder dan 3 minuten.</p>
+      <p class="lead" data-i18n="en">Your feedback helps us improve our service. It will take less than 3 minutes.</p>
 
       <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
       <div class="notice" id="notice"></div>
 
       <form id="surveyForm" class="card" novalidate>
         <div class="question" data-required="true">
-          <label class="label" for="q1_overall">1. Welk cijfer geef je ons voor onze dienstverlening? <span class="hint">(1 t/m 10)</span><span class="lang-en">How would you rate our service? (1-10)</span></label>
+          <label class="label" for="q1_overall" data-i18n="nl">1. Welk cijfer geef je ons voor onze dienstverlening? <span class="hint">(1 t/m 10)</span></label>
+          <label class="label" for="q1_overall" data-i18n="en">1. How would you rate our service? <span class="hint">(1-10)</span></label>
           <input type="number" id="q1_overall" name="q1_overall" min="1" max="10" step="1" required inputmode="numeric" placeholder="8" class="input-rating" />
           <div class="followup hidden" id="lowReasonFollowup">
-            <label class="label" for="q_low_reason">Wat is de belangrijkste reden voor deze score? <span class="hint required">(verplicht)</span><span class="lang-en">What is the main reason for this score? (required)</span></label>
-            <textarea id="q_low_reason" name="q_low_reason" maxlength="600" placeholder="Help ons begrijpen wat er anders moet — concrete voorbeelden zijn waardevol"></textarea>
+            <label class="label" for="q_low_reason" data-i18n="nl">Wat is de belangrijkste reden voor deze score? <span class="hint required">(verplicht)</span></label>
+            <label class="label" for="q_low_reason" data-i18n="en">What is the main reason for this score? <span class="hint required">(required)</span></label>
+            <textarea id="q_low_reason" name="q_low_reason" maxlength="600" data-placeholder-nl="Help ons begrijpen wat er anders moet — concrete voorbeelden zijn waardevol" data-placeholder-en="Help us understand what should change — concrete examples are valuable"></textarea>
           </div>
         </div>
 
         <div class="question">
-          <label class="label" for="q6_likes">2. Wat waardeer je het meest aan onze samenwerking? <span class="hint">(optioneel)</span><span class="lang-en">What do you value most about working with us? (optional)</span></label>
-          <textarea id="q6_likes" name="q6_likes" maxlength="600" placeholder="Bijvoorbeeld: snelle reactietijd, vakkennis, ..."></textarea>
+          <label class="label" for="q6_likes" data-i18n="nl">2. Wat waardeer je het meest aan onze samenwerking? <span class="hint">(optioneel)</span></label>
+          <label class="label" for="q6_likes" data-i18n="en">2. What do you value most about working with us? <span class="hint">(optional)</span></label>
+          <textarea id="q6_likes" name="q6_likes" maxlength="600" data-placeholder-nl="Bijvoorbeeld: snelle reactietijd, vakkennis, ..." data-placeholder-en="For example: response time, expertise, ..."></textarea>
         </div>
 
         <div class="question">
-          <label class="label" for="q7_improve">3. Wat zouden we kunnen verbeteren? <span class="hint">(optioneel)</span><span class="lang-en">What could we improve? (optional)</span></label>
-          <textarea id="q7_improve" name="q7_improve" maxlength="600" placeholder="Concrete suggesties zijn zeer welkom"></textarea>
+          <label class="label" for="q7_improve" data-i18n="nl">3. Wat zouden we kunnen verbeteren? <span class="hint">(optioneel)</span></label>
+          <label class="label" for="q7_improve" data-i18n="en">3. What could we improve? <span class="hint">(optional)</span></label>
+          <textarea id="q7_improve" name="q7_improve" maxlength="600" data-placeholder-nl="Concrete suggesties zijn zeer welkom" data-placeholder-en="Concrete suggestions are very welcome"></textarea>
         </div>
 
         <div class="question">
-          <label class="label" for="q4_ai_opportunities">4. Waar zie je nog meer kansen voor AI? <span class="hint">(optioneel)</span><span class="lang-en">Where else do you see opportunities for AI? (optional)</span></label>
-          <textarea id="q4_ai_opportunities" name="q4_ai_opportunities" maxlength="600" placeholder="Bijvoorbeeld: processen, afdelingen of taken waar AI kan helpen"></textarea>
+          <label class="label" for="q4_ai_opportunities" data-i18n="nl">4. Waar zie je nog meer kansen voor AI? <span class="hint">(optioneel)</span></label>
+          <label class="label" for="q4_ai_opportunities" data-i18n="en">4. Where else do you see opportunities for AI? <span class="hint">(optional)</span></label>
+          <textarea id="q4_ai_opportunities" name="q4_ai_opportunities" maxlength="600" data-placeholder-nl="Bijvoorbeeld: processen, afdelingen of taken waar AI kan helpen" data-placeholder-en="For example: processes, departments or tasks where AI could help"></textarea>
         </div>
 
         <div class="question" id="contactQuestion">
-          <label class="label">5. Contactgegevens <span class="hint">(optioneel — handig voor follow-up)</span><span class="lang-en">Contact details (optional — helpful for follow-up)</span></label>
+          <label class="label" data-i18n="nl">5. Contactgegevens <span class="hint">(optioneel — handig voor follow-up)</span></label>
+          <label class="label" data-i18n="en">5. Contact details <span class="hint">(optional — helpful for follow-up)</span></label>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <input type="text" name="name" placeholder="Naam / Name" maxlength="120" />
-            <input type="text" name="company" placeholder="Bedrijf / Company" maxlength="120" />
+            <input type="text" name="name" maxlength="120" data-placeholder-nl="Naam" data-placeholder-en="Name" />
+            <input type="text" name="company" maxlength="120" data-placeholder-nl="Bedrijf" data-placeholder-en="Company" />
           </div>
-          <input type="email" name="email" placeholder="E-mailadres / Email address" maxlength="160" style="margin-top:12px;" />
+          <input type="email" name="email" maxlength="160" style="margin-top:12px;" data-placeholder-nl="E-mailadres" data-placeholder-en="Email address" />
         </div>
 
         <input type="hidden" name="token" id="tokenField" />
@@ -85,10 +94,11 @@
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true" />
 
         <div class="actions">
-          <button type="submit" class="btn" id="submitBtn">Versturen / Submit</button>
+          <button type="submit" class="btn" id="submitBtn" data-label-nl="Versturen" data-label-en="Submit">Versturen</button>
         </div>
       </form>
-      <p class="meta">We behandelen je antwoorden vertrouwelijk.<span class="lang-en">We treat your answers confidentially.</span></p>
+      <p class="meta" data-i18n="nl">We behandelen je antwoorden vertrouwelijk.</p>
+      <p class="meta" data-i18n="en">We treat your answers confidentially.</p>
     </div>
   </main>
 
@@ -99,7 +109,6 @@
     const statusIcon = document.getElementById('statusIcon');
     const statusTitle = document.getElementById('statusTitle');
     const statusMessage = document.getElementById('statusMessage');
-    const statusMessageEn = document.getElementById('statusMessageEn');
     const bar = document.getElementById('progressBar');
     const notice = document.getElementById('notice');
     const submitBtn = document.getElementById('submitBtn');
@@ -108,32 +117,70 @@
     const lowReasonFollowup = document.getElementById('lowReasonFollowup');
     const lowReasonInput = document.getElementById('q_low_reason');
 
-    function showStatus(kind, title, titleEn, message, messageEn) {
+    let currentLang = 'nl';
+
+    function applyPlaceholders() {
+      document.querySelectorAll('[data-placeholder-nl]').forEach(el => {
+        const ph = currentLang === 'en' ? el.dataset.placeholderEn : el.dataset.placeholderNl;
+        if (ph != null) el.placeholder = ph;
+      });
+      const labelKey = currentLang === 'en' ? 'labelEn' : 'labelNl';
+      document.querySelectorAll('[data-label-nl]').forEach(el => {
+        const t = el.dataset[labelKey];
+        if (t != null) el.textContent = t;
+      });
+    }
+    function setLanguage(lang) {
+      currentLang = lang === 'en' ? 'en' : 'nl';
+      document.body.dataset.lang = currentLang;
+      document.documentElement.lang = currentLang;
+      applyPlaceholders();
+    }
+
+    const TEXTS = {
+      nl: {
+        invalidLink: 'Ongeldige link', invalidLinkBody: 'Deze link werkt niet meer.',
+        alreadyDone: 'Deze survey is al ingevuld', alreadyDoneBody: 'Bedankt voor je eerdere reactie. We hebben hem goed ontvangen.',
+        expired: 'Deze link is verlopen', expiredBody: 'Survey-links zijn 30 dagen geldig. Neem contact met ons op als je alsnog je feedback wilt delen.',
+        greetingPrefix: 'Hoi', greetingSuffix: 'we horen graag van je',
+        validateRequired: 'Vul alsjeblieft alle verplichte vragen in.',
+        validateLow: 'Bij een score van 6 of lager vragen we je om de belangrijkste reden in te vullen.',
+        sending: 'Versturen…', send: 'Versturen', genericError: 'Er ging iets mis. Probeer het later opnieuw.',
+      },
+      en: {
+        invalidLink: 'Invalid link', invalidLinkBody: 'This link no longer works.',
+        alreadyDone: 'This survey has already been completed', alreadyDoneBody: 'Thank you for your earlier response.',
+        expired: 'This link has expired', expiredBody: 'Survey links are valid for 30 days. Please contact us if you would still like to share your feedback.',
+        greetingPrefix: 'Hi', greetingSuffix: "we'd love to hear from you",
+        validateRequired: 'Please fill in all required questions.',
+        validateLow: 'For a score of 6 or below please tell us the main reason.',
+        sending: 'Submitting…', send: 'Submit', genericError: 'Something went wrong. Please try again later.',
+      },
+    };
+    const t = () => TEXTS[currentLang];
+
+    function showStatus(kind, title, message) {
       formContainer.classList.add('hidden');
       statusPage.classList.remove('hidden');
       statusIcon.className = 'status-icon ' + kind;
       statusIcon.textContent = kind === 'done' ? '✓' : (kind === 'expired' ? '!' : '?');
-      statusTitle.innerHTML = '';
-      statusTitle.append(document.createTextNode(title));
-      const en = document.createElement('span');
-      en.className = 'lang-en';
-      en.textContent = titleEn;
-      statusTitle.append(en);
+      statusTitle.textContent = title;
       statusMessage.textContent = message;
-      statusMessageEn.textContent = messageEn;
     }
 
     (async function hydrateFromToken() {
       const params = new URLSearchParams(window.location.search);
       const tok = params.get('t');
-      if (!tok) return;
+      if (!tok) { applyPlaceholders(); return; }
       document.getElementById('tokenField').value = tok;
       try {
         const res = await fetch('/api/invitation?t=' + encodeURIComponent(tok));
         const data = await res.json();
-        if (!res.ok) { showStatus('expired', 'Ongeldige link', 'Invalid link', data.error || 'Deze link werkt niet meer.', 'This link no longer works.'); return; }
-        if (data.alreadyResponded) { showStatus('done', 'Deze survey is al ingevuld', 'This survey has already been completed', 'Bedankt voor je eerdere reactie. We hebben hem goed ontvangen.', 'Thank you for your earlier response. We received it.'); return; }
-        if (data.expired) { showStatus('expired', 'Deze link is verlopen', 'This link has expired', 'Survey-links zijn 30 dagen geldig. Neem contact met ons op als je alsnog je feedback wilt delen.', 'Survey links are valid for 30 days. Please contact us if you would still like to share your feedback.'); return; }
+        if (data.contact && data.contact.language) setLanguage(data.contact.language);
+        else applyPlaceholders();
+        if (!res.ok) { showStatus('expired', t().invalidLink, data.error || t().invalidLinkBody); return; }
+        if (data.alreadyResponded) { showStatus('done', t().alreadyDone, t().alreadyDoneBody); return; }
+        if (data.expired) { showStatus('expired', t().expired, t().expiredBody); return; }
         if (data.contact) {
           const nameInput = form.querySelector('input[name="name"]');
           const compInput = form.querySelector('input[name="company"]');
@@ -144,17 +191,9 @@
           const cq = document.getElementById('contactQuestion');
           if (cq) cq.style.display = 'none';
           const greetName = data.contact.name ? data.contact.name.split(' ')[0] : null;
-          if (greetName) {
-            const titleEl = document.getElementById('surveyTitle');
-            titleEl.innerHTML = '';
-            titleEl.append(document.createTextNode(`Hoi ${greetName}, we horen graag van je`));
-            const en = document.createElement('span');
-            en.className = 'lang-en';
-            en.textContent = `Hi ${greetName}, we'd love to hear from you`;
-            titleEl.append(en);
-          }
+          if (greetName) document.getElementById('surveyTitle').textContent = `${t().greetingPrefix} ${greetName}, ${t().greetingSuffix}`;
         }
-      } catch {}
+      } catch { applyPlaceholders(); }
     })();
 
     function isAnswered(q) {
@@ -190,36 +229,37 @@
       notice.classList.remove('show');
       for (const q of requiredQs) {
         if (!isAnswered(q)) {
-          notice.textContent = 'Vul alsjeblieft alle verplichte vragen in. / Please fill in all required questions.';
+          notice.textContent = t().validateRequired;
           notice.classList.add('show');
           q.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
       }
       if (isLowScore() && !lowReasonAnswered()) {
-        notice.textContent = 'Bij een score van 6 of lager vragen we je om de belangrijkste reden in te vullen. / For a score of 6 or below please tell us the main reason.';
+        notice.textContent = t().validateLow;
         notice.classList.add('show');
         lowReasonFollowup.scrollIntoView({ behavior: 'smooth', block: 'center' });
         lowReasonInput.focus();
         return;
       }
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Versturen… / Submitting…';
+      submitBtn.textContent = t().sending;
       const data = Object.fromEntries(new FormData(form).entries());
       try {
         const res = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
         if (res.status === 410) {
           const j = await res.json().catch(() => ({}));
-          if ((j.error || '').includes('al ingevuld')) showStatus('done', 'Deze survey is al ingevuld', 'This survey has already been completed', 'Bedankt voor je eerdere reactie.', 'Thank you for your earlier response.');
-          else showStatus('expired', 'Deze link is verlopen', 'This link has expired', 'Survey-links zijn 30 dagen geldig.', 'Survey links are valid for 30 days.');
+          if ((j.error || '').includes('al ingevuld')) showStatus('done', t().alreadyDone, t().alreadyDoneBody);
+          else showStatus('expired', t().expired, t().expiredBody);
           return;
         }
         if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || 'Server error ' + res.status); }
-        window.location.href = '/bedankt';
+        const target = currentLang === 'en' ? '/bedankt?lang=en' : '/bedankt';
+        window.location.href = target;
       } catch (err) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Versturen / Submit';
-        notice.textContent = err.message || 'Er ging iets mis. Probeer het later opnieuw. / Something went wrong. Please try again later.';
+        submitBtn.textContent = t().send;
+        notice.textContent = err.message || t().genericError;
         notice.classList.add('show');
       }
     });

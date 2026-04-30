@@ -3,23 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bedankt voor je feedback / Thank you for your feedback</title>
+  <title>Bedankt voor je feedback</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
-    .lang-en { display: block; color: #6b7280; font-weight: 400; font-size: 0.9em; margin-top: 4px; }
+    [data-i18n="en"] { display: none; }
+    body[data-lang="en"] [data-i18n="nl"] { display: none; }
+    body[data-lang="en"] [data-i18n="en"] { display: revert; }
   </style>
 </head>
-<body>
+<body data-lang="nl">
   <main class="container" style="text-align:center;">
     <div class="brand" style="justify-content:center;">
       <div class="logo" aria-hidden="true"></div>
     </div>
 
-    <h1>Bedankt!<span class="lang-en">Thank you!</span></h1>
-    <p class="lead">Je feedback is ontvangen. We gaan er zorgvuldig mee aan de slag.<span class="lang-en">Your feedback has been received. We'll work on it carefully.</span></p>
+    <h1 data-i18n="nl">Bedankt!</h1>
+    <h1 data-i18n="en">Thank you!</h1>
+    <p class="lead" data-i18n="nl">Je feedback is ontvangen. We gaan er zorgvuldig mee aan de slag.</p>
+    <p class="lead" data-i18n="en">Your feedback has been received. We'll work on it carefully.</p>
   </main>
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const lang = params.get('lang') === 'en' ? 'en' : 'nl';
+      document.body.dataset.lang = lang;
+      document.documentElement.lang = lang;
+      if (lang === 'en') document.title = 'Thank you for your feedback';
+    })();
+  </script>
 </body>
 </html>

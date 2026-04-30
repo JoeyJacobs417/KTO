@@ -29,6 +29,10 @@ module.exports = async (req, res) => {
     ok: true,
     alreadyResponded: !!inv.respondedAt,
     expired,
-    contact: contact ? { name: contact.name, company: contact.company, email: contact.email } : null,
+    contact: contact ? {
+      name: contact.name, company: contact.company, email: contact.email,
+      type: contact.type || 'klant',
+      language: (contact.type || 'klant') === 'klant' ? (contact.language === 'en' ? 'en' : 'nl') : 'nl',
+    } : null,
   }));
 };
