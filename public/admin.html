@@ -474,6 +474,10 @@
     <section class="tab-pane" id="tab-emails">
       <div class="section-head"><h2 id="emailsHeading">E-mails — Klanten</h2></div>
       <p class="meta" style="margin-top:0;">Pas onderwerp en tekst aan van de mails die we versturen. Variabelen worden bij verzenden automatisch ingevuld: <code>{{firstName}}</code> (voornaam), <code>{{name}}</code> (volledige naam), <code>{{greeting}}</code> (begroeting "Hoi Voornaam,"), <code>{{link}}</code> (de unieke survey-link — alleen voor uitnodiging en herinnering). Een opt-out-voettekst wordt automatisch onderaan toegevoegd in uitnodigingen en herinneringen.</p>
+      <div id="emailLangToggle" class="type-switcher hide-when-medewerker" style="margin-bottom:16px;">
+        <button class="type-btn active" data-email-lang="nl">Nederlands</button>
+        <button class="type-btn" data-email-lang="en">English</button>
+      </div>
       <div id="emailsContainer"></div>
     </section>
   </main>
@@ -1227,6 +1231,7 @@
 
     const EMAIL_LANGS = { klant: ['nl', 'en'], medewerker: ['nl'] };
     const LANG_LABELS = { nl: 'Nederlands', en: 'English' };
+    let currentEmailLang = 'nl';
 
     function renderEmailTemplates() {
       const heading = $('#emailsHeading');
@@ -1236,33 +1241,34 @@
       if (!emailTemplatesCache) { container.innerHTML = '<p class="meta">Laden…</p>'; return; }
       const t = emailTemplatesCache[currentType] || {};
       const langs = EMAIL_LANGS[currentType] || ['nl'];
-      const cards = [];
-      for (const kind of EMAIL_KINDS_ORDER) {
-        for (const lang of langs) {
-          const tpl = (t[kind] && t[kind][lang]) || { subject: '', body: '' };
-          const showsLink = kind !== 'confirmation';
-          const varsHint = showsLink
-            ? 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code> · <code>{{link}}</code>'
-            : 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code>';
-          const langSuffix = langs.length > 1 ? ` <span class="meta" style="font-weight:400;font-size:14px;">(${LANG_LABELS[lang]})</span>` : '';
-          cards.push(`
-            <div class="card" style="margin-bottom:20px;">
-              <h3 style="margin-top:0;">${EMAIL_KIND_TITLES[kind]}${langSuffix}</h3>
-              <form class="email-form settings-form" data-kind="${kind}" data-lang="${lang}">
-                <div class="field">
-                  <label>Onderwerp</label>
-                  <input type="text" name="subject" maxlength="300" value="${escapeHtml(tpl.subject || '')}" />
-                </div>
-                <div class="field">
-                  <label>Tekst</label>
-                  <textarea name="body" rows="14" maxlength="20000" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;">${escapeHtml(tpl.body || '')}</textarea>
-                  <div class="meta" style="margin-top:6px;">${varsHint}</div>
-                </div>
-                <button type="submit" class="btn small">Opslaan</button>
-              </form>
-            </div>`);
-        }
-      }
+      const lang = langs.includes(currentEmailLang) ? currentEmailLang : langs[0];
+      // Sync toggle UI
+      document.querySelectorAll('#emailLangToggle [data-email-lang]').forEach(b => {
+        b.classList.toggle('active', b.dataset.emailLang === lang);
+      });
+      const cards = EMAIL_KINDS_ORDER.map(kind => {
+        const tpl = (t[kind] && t[kind][lang]) || { subject: '', body: '' };
+        const showsLink = kind !== 'confirmation';
+        const varsHint = showsLink
+          ? 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code> · <code>{{link}}</code>'
+          : 'Variabelen: <code>{{firstName}}</code> · <code>{{name}}</code> · <code>{{greeting}}</code>';
+        return `
+          <div class="card" style="margin-bottom:20px;">
+            <h3 style="margin-top:0;">${EMAIL_KIND_TITLES[kind]}</h3>
+            <form class="email-form settings-form" data-kind="${kind}" data-lang="${lang}">
+              <div class="field">
+                <label>Onderwerp</label>
+                <input type="text" name="subject" maxlength="300" value="${escapeHtml(tpl.subject || '')}" />
+              </div>
+              <div class="field">
+                <label>Tekst</label>
+                <textarea name="body" rows="14" maxlength="20000" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;">${escapeHtml(tpl.body || '')}</textarea>
+                <div class="meta" style="margin-top:6px;">${varsHint}</div>
+              </div>
+              <button type="submit" class="btn small">Opslaan</button>
+            </form>
+          </div>`;
+      });
       container.innerHTML = cards.join('');
       container.querySelectorAll('.email-form').forEach(form => {
         form.addEventListener('submit', async (e) => {
@@ -1296,6 +1302,13 @@
         });
       });
     }
+
+    document.querySelectorAll('#emailLangToggle [data-email-lang]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentEmailLang = btn.dataset.emailLang;
+        renderEmailTemplates();
+      });
+    });
 
     // ============ Audit log ============
     const ACTION_LABELS = {
