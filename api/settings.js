@@ -48,6 +48,7 @@ module.exports = async (req, res) => {
       if (body.intervalDays !== undefined) { patch.intervalDays = Number(body.intervalDays); if (patch.intervalDays !== before.intervalDays) changed.intervalDays = patch.intervalDays; }
       if (body.reminderEnabled !== undefined) { patch.reminderEnabled = Boolean(body.reminderEnabled); if (patch.reminderEnabled !== before.reminderEnabled) changed.reminderEnabled = patch.reminderEnabled; }
       if (body.reminderAfterDays !== undefined) { patch.reminderAfterDays = Number(body.reminderAfterDays); if (patch.reminderAfterDays !== before.reminderAfterDays) changed.reminderAfterDays = patch.reminderAfterDays; }
+      if (body.reminderMaxCount !== undefined) { patch.reminderMaxCount = Number(body.reminderMaxCount); if (patch.reminderMaxCount !== before.reminderMaxCount) changed.reminderMaxCount = patch.reminderMaxCount; }
       if (body.submissionRecipients !== undefined) {
         const r = parseRecipients(body.submissionRecipients);
         if (r != null) {
