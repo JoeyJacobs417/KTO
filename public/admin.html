@@ -467,6 +467,11 @@
           <textarea id="detractorRecipients" rows="3" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;" placeholder="een e-mailadres per regel"></textarea>
           <div class="meta" style="margin-top:6px;">Eén e-mailadres per regel. Wordt extra verstuurd bovenop de notificatie hierboven.</div>
         </div>
+        <div class="field hide-when-medewerker">
+          <label for="promoterRecipients">Wie ontvangt een alert bij een hoge score (≥ 9)?</label>
+          <textarea id="promoterRecipients" rows="3" style="width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;" placeholder="een e-mailadres per regel"></textarea>
+          <div class="meta" style="margin-top:6px;">Eén e-mailadres per regel — bedoeld voor het marketingteam. De alert vermeldt of de klant open staat voor benadering.</div>
+        </div>
         <button type="submit" class="btn small">Opslaan</button>
       </form>
     </section>
@@ -1189,6 +1194,7 @@
       $('#lastRoundAt').textContent = data.settings.lastRoundAt ? new Date(data.settings.lastRoundAt).toLocaleString('nl-NL') : 'Nog geen ronde verstuurd';
       $('#submissionRecipients').value = (data.settings.submissionRecipients || []).join('\n');
       $('#detractorRecipients').value = (data.settings.detractorRecipients || []).join('\n');
+      $('#promoterRecipients').value = (data.settings.promoterRecipients || []).join('\n');
     }
     function parseRecipientLines(text) {
       return String(text || '').split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
@@ -1204,12 +1210,14 @@
         reminderMaxCount: Number($('#reminderMaxCount').value),
         submissionRecipients: parseRecipientLines($('#submissionRecipients').value),
         detractorRecipients: parseRecipientLines($('#detractorRecipients').value),
+        promoterRecipients: parseRecipientLines($('#promoterRecipients').value),
       }) });
       const j = await r.json();
       if (r.ok) {
         if (j.settings) {
           $('#submissionRecipients').value = (j.settings.submissionRecipients || []).join('\n');
           $('#detractorRecipients').value = (j.settings.detractorRecipients || []).join('\n');
+          $('#promoterRecipients').value = (j.settings.promoterRecipients || []).join('\n');
         }
         toast('Instellingen opgeslagen', 'success');
       } else toast(j.error || 'Kan niet opslaan', 'error');
@@ -1325,6 +1333,7 @@
       'response.include':'Reactie ingesloten', 'response.export':'Reacties geëxporteerd',
       'settings.update':'Instellingen aangepast', 'reminders.sent':'Reminders verstuurd',
       'detractor.alert':'Detractor-alert verstuurd',
+      'promoter.alert':'Promoter-alert verstuurd',
       'email_template.update':'Mail-template aangepast',
     };
     const labelFor = (a) => ACTION_LABELS[a] || a;

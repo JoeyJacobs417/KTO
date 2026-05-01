@@ -160,6 +160,7 @@ module.exports = async (req, res) => {
   }
 
   try { await campaign.sendDetractorAlert(entry, contact); } catch (e) { console.error('Detractor alert error:', e); }
+  try { await campaign.sendPromoterAlert(entry, contact); } catch (e) { console.error('Promoter alert error:', e); }
   try { await campaign.sendConfirmation(contact, entry); } catch (e) { console.error('Confirmation error:', e); }
 
   res.statusCode = 200;

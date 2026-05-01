@@ -63,6 +63,13 @@ module.exports = async (req, res) => {
           if (JSON.stringify(r) !== JSON.stringify(before.detractorRecipients)) changed.detractorRecipients = r;
         }
       }
+      if (body.promoterRecipients !== undefined) {
+        const r = parseRecipients(body.promoterRecipients);
+        if (r != null) {
+          patch.promoterRecipients = r;
+          if (JSON.stringify(r) !== JSON.stringify(before.promoterRecipients)) changed.promoterRecipients = r;
+        }
+      }
       const next = await settings.set(patch, type);
       if (Object.keys(changed).length > 0) {
         try { await audit.log({ actor: audit.getActor(req), ip: audit.getIp(req), action: 'settings.update', details: { type, ...changed } }); } catch {}
