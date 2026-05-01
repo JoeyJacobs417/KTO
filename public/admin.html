@@ -146,6 +146,14 @@
     .nps-legend .dot.promoters { background: #10b981; }
     .nps-legend .dot.passives { background: #f59e0b; }
     .nps-legend .dot.detractors { background: #ef4444; }
+    .nps-calc { color: var(--text-muted); font-weight: 400; margin-left: 8px; }
+    .info-btn { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); font-size: 11px; font-weight: 600; font-style: italic; font-family: Georgia, serif; cursor: pointer; padding: 0; margin-left: 6px; vertical-align: middle; line-height: 1; }
+    .info-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .nps-info { margin-top: 12px; padding: 14px 18px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+    .nps-info p { margin: 0 0 8px; }
+    .nps-info ul { margin: 6px 0 8px; padding-left: 20px; }
+    .nps-info li { margin: 2px 0; }
+    .nps-info strong { color: var(--text); }
 
     .trend-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 24px; }
     .trend-section h3 { font-size: 14px; margin: 0 0 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
@@ -604,7 +612,27 @@
       if (s.promotersPct > 0) segs.push(`<div class="nps-seg promoters" style="width:${s.promotersPct}%;" title="Promoters: ${s.promoters} (${s.promotersPct}%)">${s.promotersPct >= 8 ? s.promotersPct + '%' : ''}</div>`);
       if (s.passivesPct > 0) segs.push(`<div class="nps-seg passives" style="width:${s.passivesPct}%;" title="Passives: ${s.passives} (${s.passivesPct}%)">${s.passivesPct >= 8 ? s.passivesPct + '%' : ''}</div>`);
       if (s.detractorsPct > 0) segs.push(`<div class="nps-seg detractors" style="width:${s.detractorsPct}%;" title="Detractors: ${s.detractors} (${s.detractorsPct}%)">${s.detractorsPct >= 8 ? s.detractorsPct + '%' : ''}</div>`);
-      $('#npsBreakdown').innerHTML = `<div class="nps-breakdown"><div class="nps-title"><span class="label">Verdeling ${npsLabel()}</span><span class="totals">${s.promoters} promoters · ${s.passives} passives · ${s.detractors} detractors</span></div><div class="nps-segments">${segs.join('')}</div><div class="nps-legend"><span><span class="dot promoters"></span> Promoters (9-10)</span><span><span class="dot passives"></span> Passives (7-8)</span><span><span class="dot detractors"></span> Detractors (1-6)</span></div></div>`;
+      const npsValue = s.nps != null ? (s.nps > 0 ? '+' + s.nps : String(s.nps)) : '—';
+      const calc = s.nps != null ? `<span class="nps-calc">${s.promotersPct}% − ${s.detractorsPct}% = ${npsValue}</span>` : '';
+      const infoHtml = `
+        <div class="nps-info hidden" id="npsInfoPanel">
+          <p><strong>Hoe interpreteer je een ${npsLabel()}-score?</strong></p>
+          <p>De score loopt theoretisch van −100 (iedereen detractor) tot +100 (iedereen promoter). Globale benchmarks om grip op te krijgen:</p>
+          <ul>
+            <li><strong>Onder 0</strong> — meer ongelukkige dan blije respondenten, signaal dat er structureel iets niet klopt</li>
+            <li><strong>0 tot +30</strong> — gemiddeld, ruimte voor verbetering</li>
+            <li><strong>+30 tot +50</strong> — goed</li>
+            <li><strong>+50 tot +70</strong> — heel goed, ver boven gemiddeld</li>
+            <li><strong>Boven +70</strong> — uitzonderlijk</li>
+          </ul>
+          <p>Belangrijke kanttekening: scores zijn sterk afhankelijk van branche, cultuur en steekproefgrootte. Nederlandse respondenten geven gemiddeld lagere cijfers dan bijvoorbeeld Amerikaanse — een Nederlandse +20 is grofweg vergelijkbaar met een Amerikaanse +35-40. Bij een kleine steekproef kan één extra reactie de score met enkele punten op of neer laten schieten, dus stabieler beeld krijg je naarmate je meer reacties hebt.</p>
+        </div>`;
+      $('#npsBreakdown').innerHTML = `<div class="nps-breakdown"><div class="nps-title"><span class="label">Verdeling ${npsLabel()}<button type="button" class="info-btn" id="npsInfoBtn" aria-label="Uitleg ${npsLabel()}-score" title="Uitleg ${npsLabel()}-score">i</button></span><span class="totals">${s.promoters} promoters · ${s.passives} passives · ${s.detractors} detractors${calc}</span></div><div class="nps-segments">${segs.join('')}</div><div class="nps-legend"><span><span class="dot promoters"></span> Promoters (9-10)</span><span><span class="dot passives"></span> Passives (7-8)</span><span><span class="dot detractors"></span> Detractors (1-6)</span></div>${infoHtml}</div>`;
+      const btn = $('#npsInfoBtn');
+      const panel = $('#npsInfoPanel');
+      if (btn && panel) {
+        btn.addEventListener('click', () => { panel.classList.toggle('hidden'); });
+      }
     }
 
     const monthNames = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
