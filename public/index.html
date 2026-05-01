@@ -61,6 +61,15 @@
             <label class="label" for="q_low_reason" data-i18n="en">What is the main reason for this score? <span class="hint required">(required)</span></label>
             <textarea id="q_low_reason" name="q_low_reason" maxlength="600" data-placeholder-nl="Help ons begrijpen wat er anders moet — concrete voorbeelden zijn waardevol" data-placeholder-en="Help us understand what should change — concrete examples are valuable"></textarea>
           </div>
+          <div class="followup hidden" id="marketingFollowup">
+            <label class="label" data-i18n="nl">Marketing-samenwerking <span class="hint">(optioneel)</span></label>
+            <label class="label" data-i18n="en">Marketing collaboration <span class="hint">(optional)</span></label>
+            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-elev);">
+              <input type="checkbox" id="q_marketing_consent" name="q_marketing_consent" value="yes" style="margin-top:3px; width:18px; height:18px; flex:0 0 auto;" />
+              <span data-i18n="nl">Ons marketingteam mag contact met me opnemen voor mogelijke gedeelde promotie (testimonial, blog, case of webinar).</span>
+              <span data-i18n="en">Our marketing team may contact me about possible joint promotion (testimonial, blog, case study or webinar).</span>
+            </label>
+          </div>
         </div>
 
         <div class="question">
@@ -118,6 +127,8 @@
     const q1Input = document.getElementById('q1_overall');
     const lowReasonFollowup = document.getElementById('lowReasonFollowup');
     const lowReasonInput = document.getElementById('q_low_reason');
+    const marketingFollowup = document.getElementById('marketingFollowup');
+    const marketingInput = document.getElementById('q_marketing_consent');
 
     let currentLang = 'nl';
 
@@ -207,10 +218,15 @@
       return false;
     }
     function isLowScore() { const v = Number(q1Input.value); return Number.isFinite(v) && v >= 1 && v <= 6; }
+    function isHighScore() { const v = Number(q1Input.value); return Number.isFinite(v) && v >= 9 && v <= 10; }
     function lowReasonAnswered() { return (lowReasonInput.value || '').trim().length > 0; }
     function updateLowReasonVisibility() {
       if (isLowScore()) { lowReasonFollowup.classList.remove('hidden'); lowReasonInput.required = true; }
       else { lowReasonFollowup.classList.add('hidden'); lowReasonInput.required = false; }
+    }
+    function updateMarketingVisibility() {
+      if (isHighScore()) { marketingFollowup.classList.remove('hidden'); marketingInput.disabled = false; }
+      else { marketingFollowup.classList.add('hidden'); marketingInput.disabled = true; }
     }
     function updateProgress() {
       const baseRequired = requiredQs.length;
@@ -221,7 +237,7 @@
       bar.style.width = ((answered / total) * 100) + '%';
     }
 
-    q1Input.addEventListener('input', () => { updateLowReasonVisibility(); updateProgress(); });
+    q1Input.addEventListener('input', () => { updateLowReasonVisibility(); updateMarketingVisibility(); updateProgress(); });
     lowReasonInput.addEventListener('input', updateProgress);
     form.addEventListener('change', updateProgress);
     form.addEventListener('input', updateProgress);
@@ -267,6 +283,7 @@
     });
 
     updateLowReasonVisibility();
+    updateMarketingVisibility();
     updateProgress();
   </script>
 </body>

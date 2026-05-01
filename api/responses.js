@@ -34,7 +34,11 @@ function buildCsv(responses, type) {
   const isMed = type === 'medewerker';
   const headers = isMed
     ? ['Datum', 'Naam', 'Afdeling', 'E-mail', 'Cijfer', 'Reden lage score', 'Energie', 'Verbeteren', 'Ontwikkeling', 'Ronde-id', 'Uitgesloten']
-    : ['Datum', 'Naam', 'Bedrijf', 'E-mail', 'Account manager', 'Cijfer', 'Reden lage score', 'Waardeert', 'Verbeteren', 'AI-kansen', 'Ronde-id', 'Uitgesloten'];
+    : ['Datum', 'Naam', 'Bedrijf', 'E-mail', 'Account manager', 'Cijfer', 'Reden lage score', 'Waardeert', 'Verbeteren', 'AI-kansen', 'Open voor marketing', 'Ronde-id', 'Uitgesloten'];
+  const fmtMarketing = (a) => {
+    if (a.q_marketing_consent === undefined) return '';
+    return a.q_marketing_consent ? 'ja' : 'nee';
+  };
   const rows = responses.map(e => {
     const a = e.answers || {}; const c = e.contact || {};
     const date = new Date(e.createdAt).toLocaleString('nl-NL');
@@ -46,6 +50,7 @@ function buildCsv(responses, type) {
       : [date, c.name || a.name || '', c.company || a.company || '', c.email || a.email || '',
          c.accountManager || '', a.q1_overall != null ? a.q1_overall : '', a.q_low_reason || '',
          a.q6_likes || '', a.q7_improve || '', a.q4_ai_opportunities || '',
+         fmtMarketing(a),
          e.roundId || '', e.excluded ? 'ja' : 'nee'];
     return cols.map(csvEscape).join(';');
   });

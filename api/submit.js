@@ -92,6 +92,12 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: 'Bij een score van 6 of lager is de vervolgvraag verplicht.' }));
   }
 
+  // Marketing-vraag wordt alleen gesteld bij hoge scores (9-10) op klant-surveys.
+  if (type === 'klant' && answers.q1_overall >= 9) {
+    const v = body.q_marketing_consent;
+    answers.q_marketing_consent = v === true || v === 'yes' || v === 'on' || v === 'true' || v === '1';
+  }
+
   let invitation = null; let contact = null;
   if (body.token) {
     invitation = await roundsLib.getInvitationByToken(String(body.token));
@@ -130,6 +136,9 @@ module.exports = async (req, res) => {
   try {
     await storage.append(entry);
     if (invitation) await roundsLib.markInvitationResponded(invitation.id, entry.id);
+    if (contact) {
+      try { await contactsLib.update(contact.id, { lastRespondedAt: entry.createdAt }); } catch {}
+    }
   } catch (e) { console.error('Storage error:', e); }
 
   const apiKey = process.env.RESEND_API_KEY;
